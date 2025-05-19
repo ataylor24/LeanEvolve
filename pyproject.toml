@@ -1,0 +1,42 @@
+[project]
+name = "leanconjecturer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "dotenv>=0.9.9",
+    "openai>=1.79.0",
+    "pydantic>=2.11.4",
+]
+
+[dependency-groups]
+dev = [
+    "loguru>=0.7.3",
+    "mypy>=1.15.0",
+    "ruff>=0.11.10",
+]
+
+[tool.ruff]
+line-length = 88
+exclude = [
+    "api/openapi/*.py",
+    ".venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.mypy]
+explicit_package_bases = true

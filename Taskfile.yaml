@@ -1,0 +1,14 @@
+version: '3'
+
+
+tasks:
+  default:
+    desc: "Show all tasks"
+    cmd: task --list
+
+  fmt:
+    desc: "Format and Lint"
+    cmds:
+      - uv run ruff format src
+      - uv run ruff check --fix src
+      - uv run mypy src
