@@ -1,7 +1,8 @@
 import json
 
+
 def pretty_print_jsonl(filename: str) -> None:
-    with open(filename, "r", encoding="utf-8") as f:
+    with open(filename, encoding="utf-8") as f:
         for line in f:
             try:
                 item = json.loads(line)
@@ -22,6 +23,7 @@ def pretty_print_jsonl(filename: str) -> None:
                     print()
             except json.JSONDecodeError as e:
                 print(f"Error decoding JSON: {e}")
+
 
 if __name__ == "__main__":
     import argparse
