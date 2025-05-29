@@ -1,3 +1,4 @@
+from src.application.generator.context_maker import ContextMaker
 from src.application.generator.converter import ConjectureConverter
 from src.application.generator.head_maker import ConjectureHeadMaker
 from src.application.generator.llm import ConjectureGPT
@@ -17,12 +18,19 @@ class ConjectureGenerator:
         self.head_maker = ConjectureHeadMaker()
         self.converter = ConjectureConverter(rename=True)
 
-    def generate(self, file: MathlibFile) -> list[Conjecture]:
-        prompt = self.prompt_maker.make(file)
+    def generate(self, file: MathlibFile, iter=1) -> list[Conjecture]:
+        prompt = self.prompt_maker.make(file.content)
         head = self.head_maker.make(file)
         completions = self.llm.ask(prompt)
         conjectures: list[Conjecture] = []
         for completion in completions:
             conjectures.extend(self.converter.convert(head, completion))
+
+        for _ in range(iter - 1):
+            context = ContextMaker.make(conjectures)
+            prompt = self.prompt_maker.make(context)
+            completions = self.llm.ask(prompt)
+            for completion in completions:
+                conjectures.extend(self.converter.convert(head, completion))
 
         return conjectures

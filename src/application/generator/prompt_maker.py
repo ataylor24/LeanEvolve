@@ -1,9 +1,8 @@
-from src.entity.mathlib import MathlibFile
 from src.entity.prompt import Prompt
 
 
 class PromptMaker:
-    def make(self, file: MathlibFile) -> Prompt:
+    def make(self, file_content: str) -> Prompt:
         system_prompt = (
             "Please generate new theorems in Lean 4 format that are similar "
             "but not identical to each theorem provided in the text. "
@@ -16,6 +15,6 @@ class PromptMaker:
             "(e.g., ∀, ∃, √) "
             "instead of Unicode escape sequences (e.g., \u2200).\n"
         )
-        user_prompt = "## Original Mathlib4 file:\n"
-        user_prompt += f"```lean\n{file.content[:2000]}\n```\n"
+        user_prompt = "## Original file:\n"
+        user_prompt += f"```lean\n{file_content}\n```\n"
         return Prompt(system_prompt, user_prompt)

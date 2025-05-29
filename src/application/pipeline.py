@@ -13,6 +13,7 @@ class ConjecturerPipeline:
         model_name: str,
         api_key: str,
         files: list[MathlibFile],
+        iter: int = 1,
     ) -> None:
         generator = ConjectureGenerator(model_name, api_key)
         evaluator = ConjectureEvaluator()
@@ -21,7 +22,7 @@ class ConjecturerPipeline:
 
         for file in files:
             print(f"Generating conjectures for {file.file_path}...")
-            conjectures = generator.generate(file)
+            conjectures = generator.generate(file, iter)
             print(f"Generated {len(conjectures)} conjectures for {file.file_path}")
 
             print("Saving conjectures...")
