@@ -21,7 +21,7 @@ class ConjectureConverter:
 
 def _update_footer(code: str) -> str:
     lines = code.split(":=")
-    code = ":=".join(lines[:-1]) + ":= by\n"
+    code = lines[0] + ":= by\n"
     return code
 
 

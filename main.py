@@ -5,23 +5,22 @@ def main(
     model_name: str,
     api_key: str,
     target_file_path: Path,
+    max_iter: int,
 ) -> None:
     from src.application.pipeline import ConjecturerPipeline
     from src.entity.mathlib import MathlibFile
 
-    # ファイルを読み込む
     with target_file_path.open("r") as f:
         lines = f.readlines()
-    files: list[MathlibFile] = []
+    contexts: list[str] = []
     for line in lines:
         file_path = line.strip()
         if not file_path:
             continue
         file = MathlibFile(file_path)
-        files.append(file)
+        contexts.append(file.content)
 
-    # パイプラインを実行する
-    ConjecturerPipeline.run(model_name, api_key, files)
+    ConjecturerPipeline.run(model_name, api_key, contexts, max_iter)
 
 
 if __name__ == "__main__":
@@ -46,11 +45,17 @@ if __name__ == "__main__":
         help="The API key for the model.",
     )
     parser.add_argument(
-        "--target_file_path",
+        "--target",
         type=str,
-        default="target_files.txt",
+        default="data/inter_closure_exercise.lean",
         help="The path to the target file.",
+    )
+    parser.add_argument(
+        "--max_iter",
+        type=int,
+        default=10,
+        help="The number of iterations to run.",
     )
 
     args = parser.parse_args()
-    main(args.model_name, args.api_key, Path(args.target_file_path))
+    main(args.model_name, args.api_key, Path(args.target), args.max_iter)

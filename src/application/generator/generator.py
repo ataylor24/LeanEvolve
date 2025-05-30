@@ -3,7 +3,6 @@ from src.application.generator.head_maker import ConjectureHeadMaker
 from src.application.generator.llm import ConjectureGPT
 from src.application.generator.prompt_maker import PromptMaker
 from src.entity.conjecture import Conjecture
-from src.entity.mathlib import MathlibFile
 
 
 class ConjectureGenerator:
@@ -17,9 +16,9 @@ class ConjectureGenerator:
         self.head_maker = ConjectureHeadMaker()
         self.converter = ConjectureConverter(rename=True)
 
-    def generate(self, file: MathlibFile) -> list[Conjecture]:
-        prompt = self.prompt_maker.make(file)
-        head = self.head_maker.make(file)
+    def generate(self, content: str) -> list[Conjecture]:
+        prompt = self.prompt_maker.make(content)
+        head = self.head_maker.make(content)
         completions = self.llm.ask(prompt)
         conjectures: list[Conjecture] = []
         for completion in completions:
