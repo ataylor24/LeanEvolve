@@ -1,10 +1,8 @@
-from src.application.generator.context_maker import ContextMaker
 from src.application.generator.converter import ConjectureConverter
 from src.application.generator.head_maker import ConjectureHeadMaker
 from src.application.generator.llm import ConjectureGPT
 from src.application.generator.prompt_maker import PromptMaker
 from src.entity.conjecture import Conjecture
-from src.entity.mathlib import MathlibFile
 
 
 class ConjectureGenerator:

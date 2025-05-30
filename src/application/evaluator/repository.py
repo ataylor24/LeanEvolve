@@ -1,3 +1,4 @@
+import json
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -6,6 +7,7 @@ from src.constant import DATA_ROOT
 from src.entity.conjecture_eval_result import ConjectureEvalResult
 
 EVAL_RESULT_JSONL_FILE_PATH = DATA_ROOT / "conjecture_eval_result.jsonl"
+NONTIVIAL_CONJECTURE_JSONL_FILE_PATH = DATA_ROOT / "grpo_problem.jsonl"
 
 
 class ConjectureEvalResultRepository:
@@ -27,6 +29,15 @@ class ConjectureEvalResultRepository:
         with open(self.file_path, "a") as f:
             for result in results:
                 f.write(result.model_dump_json() + "\n")
+
+        with NONTIVIAL_CONJECTURE_JSONL_FILE_PATH.open("a") as f:
+            for result in results:
+                if (
+                    not result.already_exists
+                    and not result.aesop_provable
+                    and result.error is None
+                ):
+                    f.write(json.dumps({"problem": result.conjecture.statement}) + "\n")
 
     def get_by_conjecture_id(
         self, conjecture_id: uuid.UUID

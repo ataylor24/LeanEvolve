@@ -2,6 +2,7 @@ from src.constant import DATA_ROOT
 from src.entity.conjecture import Conjecture
 
 CONJECTURE_JSONL_FILE_PATH = DATA_ROOT / "conjecture.jsonl"
+NONTIVIAL_CONJECTURE_JSONL_FILE_PATH = DATA_ROOT / "nontrivial_conjecture.jsonl"
 
 
 class ConjectureRepository:

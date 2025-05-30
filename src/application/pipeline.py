@@ -24,7 +24,7 @@ class ConjecturerPipeline:
 
         for context in contexts:
             for _ in range(max_iter):
-                print(f"Generating conjectures...")
+                print("Generating conjectures...")
                 conjectures = generator.generate(context)
                 print(f"Generated {len(conjectures)} conjectures")
 
