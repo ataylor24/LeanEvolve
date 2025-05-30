@@ -1,17 +1,14 @@
-from src.entity.mathlib import MathlibFile
-
-
 class ConjectureHeadMaker:
-    def make(self, file: MathlibFile) -> str:
+    def make(self, content: str) -> str:
         context_set = set()
         context_list = []
         namespace_set = set()
-        for line in file.content.split("\n"):
+        for line in content.split("\n"):
             if line.startswith("variable"):
                 if line not in context_set:
                     context_list.append(line)
                     context_set.add(line)
-            elif line.startswith("namespace"):
+            elif line.startswith("open"):
                 namespaces = line.split(" ")[1:]
                 for namespace in namespaces:
                     namespace_set.add(namespace)

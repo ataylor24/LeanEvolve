@@ -5,22 +5,22 @@ def main(
     model_name: str,
     api_key: str,
     target_file_path: Path,
-    iter: int,
+    max_iter: int,
 ) -> None:
     from src.application.pipeline import ConjecturerPipeline
     from src.entity.mathlib import MathlibFile
 
     with target_file_path.open("r") as f:
         lines = f.readlines()
-    files: list[MathlibFile] = []
+    contexts: list[str] = []
     for line in lines:
         file_path = line.strip()
         if not file_path:
             continue
         file = MathlibFile(file_path)
-        files.append(file)
+        contexts.append(file.content)
 
-    ConjecturerPipeline.run(model_name, api_key, files, iter)
+    ConjecturerPipeline.run(model_name, api_key, contexts, max_iter)
 
 
 if __name__ == "__main__":
@@ -47,15 +47,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--target",
         type=str,
-        default="target_files.txt",
+        default="data/inter_closure_exercise.lean",
         help="The path to the target file.",
     )
     parser.add_argument(
-        "--iter",
+        "--max_iter",
         type=int,
-        default=1,
+        default=10,
         help="The number of iterations to run.",
     )
 
     args = parser.parse_args()
-    main(args.model_name, args.api_key, Path(args.target), args.iter)
+    main(args.model_name, args.api_key, Path(args.target), args.max_iter)

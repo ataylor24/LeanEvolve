@@ -3,8 +3,9 @@ from src.application.evaluator import (
     ConjectureEvaluator,
 )
 from src.application.generator import ConjectureGenerator, ConjectureRepository
+from src.application.generator.context_maker import ContextMaker
 from src.application.lean_processor import LeanProcessor
-from src.entity.mathlib import MathlibFile
+from src.entity.conjecture_eval_result import ConjectureEvalResult
 
 
 class ConjecturerPipeline:
@@ -12,28 +13,38 @@ class ConjecturerPipeline:
     def run(
         model_name: str,
         api_key: str,
-        files: list[MathlibFile],
-        iter: int = 1,
+        contexts: list[str],
+        max_iter: int = 1,
     ) -> None:
         generator = ConjectureGenerator(model_name, api_key)
         evaluator = ConjectureEvaluator()
         repository = ConjectureRepository()
         eval_repository = ConjectureEvalResultRepository()
+        conjecture_eval_results: list[ConjectureEvalResult] = []
 
-        for file in files:
-            print(f"Generating conjectures for {file.file_path}...")
-            conjectures = generator.generate(file, iter)
-            print(f"Generated {len(conjectures)} conjectures for {file.file_path}")
+        for context in contexts:
+            for _ in range(max_iter):
+                print(f"Generating conjectures...")
+                conjectures = generator.generate(context)
+                print(f"Generated {len(conjectures)} conjectures")
 
-            print("Saving conjectures...")
-            repository.save(conjectures)
-            print(f"Saved {len(conjectures)} conjectures to repository")
+                print("Saving conjectures...")
+                repository.save(conjectures)
+                print(f"Saved {len(conjectures)} conjectures to repository")
 
-            print("Evaluating conjectures...")
-            processors = [LeanProcessor(i) for i in range(len(conjectures))]
-            results = evaluator.evaluate(processors, conjectures)
-            print(f"Evaluated {len(results)} conjectures")
+                print("Evaluating conjectures...")
+                processors = [LeanProcessor(i) for i in range(len(conjectures))]
+                results = evaluator.evaluate(processors, conjectures)
+                print(f"Evaluated {len(results)} conjectures")
 
-            print("Saving evaluation results...")
-            eval_repository.save(results)
-            print(f"Saved {len(results)} evaluation results to repository")
+                print("Saving evaluation results...")
+                eval_repository.save(results)
+                print(f"Saved {len(results)} evaluation results to repository")
+
+                print("Updating context...")
+                conjecture_eval_results.extend(results)
+                context, updated = ContextMaker.make(context, conjecture_eval_results)
+                if not updated:
+                    print("No new conjectures found")
+                    break
+                print("Updated context:\n...\n", context[-300:])
