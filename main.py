@@ -47,7 +47,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--target",
         type=str,
-        default="data/inter_closure_exercise.lean",
+        default="target_files.txt",
         help="The path to the target file.",
     )
     parser.add_argument(
