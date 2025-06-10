@@ -28,6 +28,14 @@ class Conjecture(BaseModel):
     @property
     def statement(self) -> str:
         return "theorem" + self.code.split("theorem")[-1]
+    
+    @property
+    def context_and_statement(self) -> str:
+        return self.context + self.statement
+    
+    @property
+    def sorry_statement(self) -> str:
+        return self.statement + "  sorry\n"
 
     @property
     def name(self) -> str:

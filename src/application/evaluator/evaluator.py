@@ -104,7 +104,7 @@ class ConjectureEvaluator:
         If the goal is not found, return None and the error response.
         If the goal is found, return the goal and None.
         """
-        sorry_code = conjecture.code.split(":=")[0] + ":= by sorry\n"
+        sorry_code = conjecture.context_and_statement.split(":=")[0] + ":= by sorry\n"
         response = lean.exec(sorry_code)
         for message in response.messages:
             if (

@@ -37,7 +37,7 @@ class ConjectureEvalResultRepository:
                     and not result.aesop_provable
                     and result.error is None
                 ):
-                    f.write(json.dumps({"problem": result.conjecture.code}) + "\n")
+                    f.write(json.dumps({"problem": result.conjecture.context + result.conjecture.statement}) + "\n")
 
     def get_by_conjecture_id(
         self, conjecture_id: uuid.UUID

@@ -10,7 +10,7 @@ class ContextMaker:
         return: (updated context, whether new conjectures are found)
         """
         nontrivial_conjecture_statements = [
-            eval_result.conjecture.statement
+            eval_result.conjecture.sorry_statement
             for eval_result in eval_results
             if not eval_result.already_exists and eval_result.error is None
         ]

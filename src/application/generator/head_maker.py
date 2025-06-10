@@ -1,5 +1,7 @@
+from src.entity.conjecture_eval_result import ConjectureEvalResult
+
 class ConjectureHeadMaker:
-    def make(self, content: str) -> str:
+    def make(self, content: str, eval_results: list[ConjectureEvalResult]) -> str:
         context_set = set()
         context_list = []
         namespace_set = set()
@@ -17,4 +19,6 @@ class ConjectureHeadMaker:
         return (
             "\n\n".join(["import Mathlib\nimport Aesop", context_str, namespace_str])
             + "\n"
+            + "\n".join([eval_result.conjecture.sorry_statement for eval_result in eval_results
+                         if not eval_result.already_exists and eval_result.error is None])
         )
