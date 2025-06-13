@@ -18,7 +18,11 @@ class ConjectureGenerator:
         self.head_maker = ConjectureHeadMaker()
         self.converter = ConjectureConverter(rename=rename)
 
-    def generate(self, context: str, eval_results: list[ConjectureEvalResult] = []) -> list[Conjecture]:
+    def generate(
+        self, context: str, eval_results: list[ConjectureEvalResult] | None = None
+    ) -> list[Conjecture]:
+        if eval_results is None:
+            eval_results = []
         prompt = self.prompt_maker.make(context)
         head = self.head_maker.make(context, eval_results)
         completions = self.llm.ask(prompt)

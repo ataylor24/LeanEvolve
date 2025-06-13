@@ -28,7 +28,21 @@ class ConjectureEvalResultRepository:
         """ConjectureEvalResultをjsonl形式で保存する"""
         with open(self.file_path, "a") as f:
             for result in results:
-                f.write(result.model_dump_json() + "\n")
+                f.write(
+                    json.dumps(
+                        {
+                            "id": str(result.conjecture.id),
+                            "already_exists": result.already_exists,
+                            "aesop_provable": result.aesop_provable,
+                            "goal": result.goal,
+                            "proof": result.proof,
+                            "error": None if result.error is None else result.error.model_dump_json(),
+                            "created_at": result.created_at.isoformat(),
+                            "conjecture": result.conjecture.context_and_statement,
+                        }
+                    )
+                    + "\n"
+                )
 
         with NONTIVIAL_CONJECTURE_JSONL_FILE_PATH.open("a") as f:
             for result in results:
@@ -37,7 +51,10 @@ class ConjectureEvalResultRepository:
                     and not result.aesop_provable
                     and result.error is None
                 ):
-                    f.write(json.dumps({"problem": result.conjecture.context + result.conjecture.statement}) + "\n")
+                    f.write(
+                        json.dumps({"problem": result.conjecture.context_and_statement})
+                        + "\n"
+                    )
 
     def get_by_conjecture_id(
         self, conjecture_id: uuid.UUID

@@ -20,9 +20,9 @@ class ConjecturerPipeline:
         evaluator = ConjectureEvaluator()
         repository = ConjectureRepository()
         eval_repository = ConjectureEvalResultRepository()
-        conjecture_eval_results: list[ConjectureEvalResult] = []
 
         for context in contexts:
+            conjecture_eval_results: list[ConjectureEvalResult] = []
             for _ in range(max_iter):
                 print("Generating conjectures...")
                 conjectures = generator.generate(context, conjecture_eval_results)
