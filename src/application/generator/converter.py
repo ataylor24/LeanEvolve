@@ -27,10 +27,10 @@ def _update_footer(code: str) -> str:
 
 def _to_theorem(code: str) -> Conjecture:
     try:
-        code = re.sub(r"\b(theorem|lemma)\b", "theorem", code, count=1)
-        code = "theorem" + "theorem".join(code.split("theorem")[1:])
+        code = re.sub(r"lemma", "theorem", code, count=1)
+        idx = code.find("theorem")
+        code = code[idx:] if idx != -1 else ""
         return Conjecture.new(code=code)
-
     except Exception as e:
         logger.warning(f"Error: {e}")
         logger.warning(f"Invalid statement: {code}")

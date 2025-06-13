@@ -8,17 +8,9 @@ def main(
     max_iter: int,
 ) -> None:
     from src.application.pipeline import ConjecturerPipeline
-    from src.entity.mathlib import MathlibFile
 
     with target_file_path.open("r") as f:
-        lines = f.readlines()
-    contexts: list[str] = []
-    for line in lines:
-        file_path = line.strip()
-        if not file_path:
-            continue
-        file = MathlibFile(file_path)
-        contexts.append(file.content)
+        contexts = [f.read()]
 
     ConjecturerPipeline.run(model_name, api_key, contexts, max_iter)
 
@@ -35,7 +27,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_name",
         type=str,
-        default="o3-mini",
+        default="o3",
         help="The name of the model to use for generation.",
     )
     parser.add_argument(
@@ -47,13 +39,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--target",
         type=str,
-        default="target_files.txt",
+        default="./InterClosureExercise.lean",
         help="The path to the target file.",
     )
     parser.add_argument(
         "--max_iter",
         type=int,
-        default=10,
+        default=15,
         help="The number of iterations to run.",
     )
 
