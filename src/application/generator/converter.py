@@ -16,7 +16,7 @@ class ConjectureConverter:
         )
         if self.rename:
             conjecture = _rename(conjecture)
-        return [conjecture]
+        return [conjecture] if conjecture is not None else []
 
 
 def _update_footer(code: str) -> str:
@@ -25,7 +25,7 @@ def _update_footer(code: str) -> str:
     return code
 
 
-def _to_theorem(code: str) -> Conjecture:
+def _to_theorem(code: str) -> Conjecture | None:
     try:
         code = re.sub(r"lemma", "theorem", code, count=1)
         idx = code.find("theorem")
@@ -34,19 +34,23 @@ def _to_theorem(code: str) -> Conjecture:
     except Exception as e:
         logger.warning(f"Error: {e}")
         logger.warning(f"Invalid statement: {code}")
-        return Conjecture.new(code=code, generate_err=str(e))
+        return None
 
 
-def _update_header(head: str, conjecture: Conjecture) -> Conjecture:
+def _update_header(head: str, conjecture: Conjecture | None) -> Conjecture | None:
     # if code starts with import, we need to remove the first import sentence
     # and replace it with updated import sentence
+    if conjecture is None:
+        return None
     if not conjecture.generation_successful:
         return conjecture
     conjecture.update_code(code=head + "\n" + conjecture.code)
     return conjecture
 
 
-def _rename(conjecture: Conjecture) -> Conjecture:
+def _rename(conjecture: Conjecture | None) -> Conjecture | None:
+    if conjecture is None:
+        return None
     if not conjecture.generation_successful:
         return conjecture
 
