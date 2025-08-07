@@ -1,6 +1,6 @@
-# LeanConjecturer
+# LeanEvolve
 
-A tool for generating mathematical conjectures using Lean 4 and AI models.
+A tool for generating mathematical conjectures using Lean 4 and AI models built on top of LeanConjecturer (Onda et al. 2025 https://arxiv.org/abs/2506.22005) following the AlphaEvolve framework.
 
 ## Environment Setup
 
@@ -12,8 +12,8 @@ A tool for generating mathematical conjectures using Lean 4 and AI models.
 
 1. **Clone the repository with submodules**
    ```bash
-   git clone --recursive git@github.com:auto-res/LeanConjecturer.git
-   cd LeanConjecturer
+   git clone --recursive git@github.com:auto-res/LeanEvolve.git
+   cd LeanEvolve
    ```
    
    If you've already cloned without submodules:
@@ -21,7 +21,7 @@ A tool for generating mathematical conjectures using Lean 4 and AI models.
    git submodule update --init --recursive
    ```
 
-2. **Build the Lean REPL**
+2. **Build the Lean REPL (DEPRECATED)**
    ```bash
    cd repl
    lake exe cache get
