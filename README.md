@@ -5,7 +5,7 @@ A tool for generating mathematical conjectures using Lean 4 and AI models built 
 ## Environment Setup
 
 ### Prerequisites
-- Lean 4 must be installed on your system
+- Kimina Lean Server must be set-up in your local environment: https://github.com/project-numina/kimina-lean-server/tree/main
 - Python 3.11+ with uv package manager
 
 ### Installation Steps
