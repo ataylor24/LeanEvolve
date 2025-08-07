@@ -5,11 +5,14 @@ from loguru import logger
 from src.application.lean_processor import LeanProcessor, LeanProcessorResponse
 from src.entity.conjecture import Conjecture
 from src.entity.conjecture_eval_result import ConjectureEvalResult
-
+from src.application.evaluator.KiminaPool import KiminaPool
 
 @dataclass
 class ConjectureEvaluator:
     try_remove_contexts: bool = False
+
+    def __init__(self, kimina_proc: KiminaPool):
+        self.kimina_proc = kimina_proc
 
     def _eval_unit(
         self, lean: LeanProcessor, conjecture: Conjecture
@@ -22,6 +25,8 @@ class ConjectureEvaluator:
                 error=None,
                 goal=None,
                 proof=None,
+                context_name="",
+                iter_num=iter_num,
             )
         if self.try_remove_contexts:
             conjecture = self._try_remove_contexts(lean, conjecture)
@@ -35,6 +40,8 @@ class ConjectureEvaluator:
                 error=error,
                 goal=None,
                 proof=None,
+                context_name="",
+                iter_num=-1,
             )
 
         exact_proof = self._check_by_exact(lean, conjecture)
@@ -46,6 +53,8 @@ class ConjectureEvaluator:
                 error=None,
                 goal=goal,
                 proof=exact_proof,
+                context_name="",
+                iter_num=-1,
             )
 
         aesop_proof = self._check_by_aesop(lean, conjecture)
@@ -57,6 +66,8 @@ class ConjectureEvaluator:
                 error=None,
                 goal=goal,
                 proof=aesop_proof,
+                context_name="",
+                iter_num=-1,
             )
 
         return ConjectureEvalResult.new(
@@ -66,15 +77,100 @@ class ConjectureEvaluator:
             error=None,
             goal=goal,
             proof=None,
+            context_name="",
+            iter_num=-1,
         )
-
+    
+    
     def evaluate(
-        self, leans: list[LeanProcessor], conjectures: list[Conjecture]
+        self,
+        conjectures: list[Conjecture],
+        context_name: str,
+        iter_num: int,
     ) -> list[ConjectureEvalResult]:
-        return [
-            self._eval_unit(lean, conjecture)
-            for lean, conjecture in zip(leans, conjectures, strict=False)
+
+        # -------------------- Stage 1: compilation only --------------------
+        lean_snips = [cj.code for cj in conjectures]
+        compile_res = self.kimina_proc.compile_only(lean_snips)
+
+        stage1_pass = [
+            idx for idx, r in enumerate(compile_res)
+            if r["error"] is None and all(
+                m["severity"] != "error" for m in r["response"]["messages"]
+            )
         ]
+        # keep track of indices that pass stage 2 ("exact?") so we can
+        # attempt the final `aesop?` proof search.  Start with an empty list
+        # and append to it as we identify conjectures that were not solved by
+        # `exact?`.
+        stage2_pass: list[int] = []
+
+        # initialise results with failures
+        results = [
+            ConjectureEvalResult.new(
+                conjecture=cj,
+                passed=False,
+                already_exists=False,
+                aesop_provable=False,
+                error="compile_failed" if i not in stage1_pass else None,
+                goal=None,
+                proof=None,
+                context_name=context_name,
+                iter_num=iter_num,
+            )
+            for i, cj in enumerate(conjectures)
+        ]
+
+        # -------------------- Stage 2: exact? ------------------------------
+        if stage1_pass:
+            exact_req  = [lean_snips[i] for i in stage1_pass]
+            exact_res  = self.kimina_proc.exact_suggestion(exact_req)
+            for local_idx, resp in enumerate(exact_res):
+                global_idx = stage1_pass[local_idx]
+                found = any(
+                    m["severity"] == "info" and m["data"].startswith("Try this:")
+                    for m in resp["response"]["messages"]
+                )
+                if found:
+                    results[global_idx] = ConjectureEvalResult.new(
+                        conjecture=conjectures[global_idx],
+                        passed=False,
+                        already_exists=True,
+                        aesop_provable=False,
+                        error=None,
+                        goal=None,           # goal extraction can be added
+                        proof="exact?",
+                        context_name=context_name,
+                        iter_num=iter_num,
+                    )
+                else:
+                    stage2_pass.append(global_idx)
+  
+        # -------------------- Stage 3: aesop? ------------------------------
+        if stage2_pass:
+            aesop_req = [lean_snips[i] for i in stage2_pass]
+            aesop_res = self.kimina_proc.aesop_suggestion(aesop_req)
+            for local_idx, resp in enumerate(aesop_res):
+                global_idx = stage2_pass[local_idx]
+                proved = any(
+                    m["severity"] == "info"
+                    and m["data"].startswith("Try this:")
+                    and "sorry" not in m["data"]
+                    for m in resp["response"]["messages"]
+                )
+                results[global_idx] = ConjectureEvalResult.new(
+                    conjecture=conjectures[global_idx],
+                    passed=False if proved else True,
+                    already_exists=False,
+                    aesop_provable=proved,
+                    error=None if proved else "aesop_failed",
+                    goal=None,
+                    proof="aesop?" if proved else None,
+                    context_name=context_name,
+                    iter_num=iter_num,
+                )
+   
+        return results
 
     @staticmethod
     def _try_remove_contexts(lean: LeanProcessor, conjecture: Conjecture) -> Conjecture:

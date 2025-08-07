@@ -12,7 +12,7 @@ class ContextMaker:
         nontrivial_conjecture_statements = [
             eval_result.conjecture.sorry_statement
             for eval_result in eval_results
-            if not eval_result.already_exists and eval_result.error is None
+            if eval_result.passed and not eval_result.already_exists
         ]
         context += "\n\n".join(nontrivial_conjecture_statements)
         return context, len(nontrivial_conjecture_statements) > 0

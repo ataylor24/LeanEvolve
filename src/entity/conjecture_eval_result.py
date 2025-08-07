@@ -17,7 +17,7 @@ class ConjectureEvalResult(BaseModel):
         is_valid (bool): Indicates whether the conjecture is valid.
         already_exists (bool): Indicates whether the conjecture already exists.
         aesop_provable (bool): Indicates whether the conjecture is provable by Aesop.
-        error (LeanProcessorResponse | None):
+        error (LeanProcessorResponse | str | None):
         The error response from the Lean processor, if any.
         proof (str | None): The proof of the conjecture, if available.
         id (uuid.UUID): Unique identifier for the result.
@@ -25,13 +25,16 @@ class ConjectureEvalResult(BaseModel):
     """
 
     conjecture: Conjecture
+    passed: bool
     already_exists: bool
     aesop_provable: bool
-    error: LeanProcessorResponse | None
+    error: LeanProcessorResponse | str | None
     goal: str | None
     proof: str | None
     id: uuid.UUID
     created_at: datetime
+    context_name: str
+    iter_num: int
 
     @property
     def is_valid(self) -> bool:
@@ -42,20 +45,26 @@ class ConjectureEvalResult(BaseModel):
     def new(
         cls,
         conjecture: Conjecture,
+        passed: bool,
         already_exists: bool,
         aesop_provable: bool,
         error: LeanProcessorResponse | None,
         goal: str | None,
         proof: str | None,
+        context_name: str,
+        iter_num: int,
     ):
         """Create a new instance of ConjectureEvalResult."""
         return cls(
             conjecture=conjecture,
+            passed=passed,
             already_exists=already_exists,
             aesop_provable=aesop_provable,
             error=error,
             goal=goal,
             proof=proof,
             id=uuid.uuid4(),
-            created_at=datetime.now(),
+            created_at=datetime.now(), 
+            context_name=context_name,
+            iter_num=iter_num,
         )

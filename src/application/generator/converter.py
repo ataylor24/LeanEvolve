@@ -10,7 +10,7 @@ from src.entity.conjecture import Conjecture
 class ConjectureConverter:
     rename: bool = False
 
-    def convert(self, conjecture_head: str, completion: str) -> list[Conjecture]:
+    def convert(self, conjecture_head: str, completion: str, meta: dict | None = None) -> list[Conjecture]:
         conjecture = _update_header(
             conjecture_head, _to_theorem(_update_footer(completion))
         )

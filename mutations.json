@@ -1,0 +1,300 @@
+{
+  "Mathlib.Algebra.Squarefree.Basic": {
+    "mutations": [
+      {
+        "name": "prime_power_factorization",
+        "descriptor_delta": {
+          "delta_tokens": 9
+        },
+        "description": "Replace a square\u2011free conclusion with one asserting that if p\u1d4f \u2223 n (k \u2265 2) then p does not divide the complementary factor, forcing a contradiction with unique factorisation."
+      },
+      {
+        "name": "radical_squarefree_equiv",
+        "descriptor_delta": {
+          "delta_tokens": 10
+        },
+        "description": "Transform the goal `Squarefree n` into `radical n = n` inside \u2124, linking square\u2011free integers to radicals."
+      },
+      {
+        "name": "introduce_mobius_sum",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "Add a statement about the M\u00f6bius function \u03bc evaluated on divisors of n squared, forcing cancellation in \u2211\u208dd\u2223n\u00b2\u208e \u03bc d."
+      },
+      {
+        "name": "polynomial_squarefree_lift",
+        "descriptor_delta": {
+          "delta_tokens": 9
+        },
+        "description": "Lift an integer square\u2011free lemma to polynomials by asserting `Squarefree (C n * X + 1)` under suitable n \u2260 0."
+      },
+      {
+        "name": "squarefree_prime_product_bound",
+        "descriptor_delta": {
+          "delta_tokens": 7
+        },
+        "description": "Strengthen results to products of distinct primes p\u2081\u22efp\u2096, showing any proper divisor has at most k\u202f\u2212\u202f1 prime factors."
+      },
+      {
+        "name": "minimal_prime_divisor_uniqueness",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "Assert that the minimal prime dividing a non\u2011unit square\u2011free integer appears with exponent exactly one and is unique."
+      },
+      {
+        "name": "squarefree_power_divisor_bound",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "Prove that if n is square\u2011free then every divisor of n\u1d4f is of the form d\u00b7m\u00b2 with d \u2223 n."
+      },
+      {
+        "name": "gcd_squarefree_cancellation",
+        "descriptor_delta": {
+          "delta_tokens": 7
+        },
+        "description": "Introduce a hypothesis `Squarefree n` and conclude `gcd n m = 1 \u2192 Squarefree (n * m)`."
+      },
+      {
+        "name": "unit_associated_normalisation",
+        "descriptor_delta": {
+          "delta_tokens": 6
+        },
+        "description": "Replace equalities up to units by explicit `\u2203 u : Units \u2124, u \u2022 x = y`, linking square\u2011free factors through units."
+      },
+      {
+        "name": "radical_divides_squarefree_power",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "State that `radical n \u2223 n\u1d4f` with equality iff n is square\u2011free, relating radicals to arbitrary powers."
+      }
+    ]
+  },
+  "Mathlib.Analysis.Complex.Arg": {
+    "mutations": [
+      {
+        "name": "arg_monodromy_loop",
+        "descriptor_delta": {
+          "delta_tokens": 9
+        },
+        "description": "Replace an equality with a statement that analytic continuation of arg around a simple closed loop changes by 2\u03c0\u00b7k, k \u2260 0."
+      },
+      {
+        "name": "arg_continuous_branch_cut",
+        "descriptor_delta": {
+          "delta_tokens": 10
+        },
+        "description": "Add the difficult claim that on a simply\u2011connected open set avoiding 0 and the negative real axis, arg admits a continuous lift to \u211d."
+      },
+      {
+        "name": "winding_number_integral",
+        "descriptor_delta": {
+          "delta_tokens": 10
+        },
+        "description": "Relate \u222e\u2080\u00b9 (d\u202f/\u202fdt) arg \u03b3(t) dt to the integer winding number of a closed curve \u03b3 not hitting 0."
+      },
+      {
+        "name": "arg_log_equivalence_branch",
+        "descriptor_delta": {
+          "delta_tokens": 9
+        },
+        "description": "Assert that for a chosen branch Log, `arg z = im (Log z)` and deduce uniqueness of branches on star\u2011shaped domains."
+      },
+      {
+        "name": "arg_conformal_map_invariance",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "State that for a conformal f with f(0) \u2260 0 the increment of arg along f\u2218\u03b3 equals that of \u03b3, modulo its winding number."
+      },
+      {
+        "name": "arg_maximum_principle_variant",
+        "descriptor_delta": {
+          "delta_tokens": 11
+        },
+        "description": "Strengthen an arg bound to show that if arg of a holomorphic function attains a local interior extremum then the function is constant."
+      },
+      {
+        "name": "arg_triangle_strict",
+        "descriptor_delta": {
+          "delta_tokens": 7
+        },
+        "description": "Upgrade `|arg(z\u202fw)\u00a0\u2212\u00a0arg\u202fz\u00a0\u2212\u00a0arg\u202fw| \u2264 \u03c0` to a strict inequality with \u03b5 > 0 under non\u2011collinearity conditions."
+      },
+      {
+        "name": "arg_branch_derivative",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "Introduce the claim that the derivative of a smooth branch of arg equals `Im (z\u207b\u00b9)` on its domain."
+      },
+      {
+        "name": "arg_winding_number_path_lift",
+        "descriptor_delta": {
+          "delta_tokens": 9
+        },
+        "description": "Assert the existence of a continuous lift of arg to \u211d along any path avoiding 0 and relate its endpoints to winding number."
+      },
+      {
+        "name": "arg_monotone_homotopy",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "Given a homotopy H between two loops avoiding 0, prove their arg increments differ by 2\u03c0k with the same k."
+      }
+    ],
+    "strip_zero_cases": "Eliminates the trivial zero-terms from an equivalence by adding hypotheses x\u22600 and y\u22600, thereby isolating the non-trivial branch.",
+    "common_scalar_rescale": "Multiply every occurrence of the variables by one arbitrary non-zero scalar, exploiting the homogeneity of the norms and arguments."
+  },
+  "Mathlib.SetTheory.Cardinal.Arithmetic": {
+    "mutations": [
+      {
+        "name": "strong_limit_power_bound",
+        "descriptor_delta": {
+          "delta_tokens": 9
+        },
+        "description": "Replace \u03ba\u207a < 2^\u03ba with the harder \u2264 bound for strong\u2011limit cardinals and discuss failure under SCH."
+      },
+      {
+        "name": "beth_fixed_point_existence",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "State that for every \u03ba there exists \u03bb > \u03ba with beth_\u03bb = \u03bb, yielding fixed points of the beth hierarchy."
+      },
+      {
+        "name": "singular_strong_limit_exponent",
+        "descriptor_delta": {
+          "delta_tokens": 10
+        },
+        "description": "Claim that if \u03ba is singular strong\u2011limit then 2^\u03ba = \u03ba\u207a\u207a under GCH and investigate consistency otherwise."
+      },
+      {
+        "name": "pcf_theoretic_bound",
+        "descriptor_delta": {
+          "delta_tokens": 10
+        },
+        "description": "Introduce the pcf\u2011bound `\u03ba^{cf \u03ba} < maxpcf(\u03ba)` for regular \u03ba and relate it to Shelah's Strong Hypothesis."
+      },
+      {
+        "name": "silver_dichotomy_colouring",
+        "descriptor_delta": {
+          "delta_tokens": 9
+        },
+        "description": "State a variant of Silver's theorem showing that any colouring of [\u03ba]\u00b2 into < cf \u03ba colours has a homogeneous set of size \u03ba."
+      },
+      {
+        "name": "eastons_function_extension",
+        "descriptor_delta": {
+          "delta_tokens": 10
+        },
+        "description": "Assert that a given normal monotone Easton function on regulars extends to the full power\u2011set function consistently."
+      },
+      {
+        "name": "stationary_set_reflection_bound",
+        "descriptor_delta": {
+          "delta_tokens": 9
+        },
+        "description": "Relate failure of stationary reflection at \u03ba to lower bounds on 2^\u03ba, yielding inequalities beyond GCH."
+      },
+      {
+        "name": "square_principle_cardinality",
+        "descriptor_delta": {
+          "delta_tokens": 10
+        },
+        "description": "Assuming \u25fb_\u03ba, derive a strict inequality between \u03ba\u207a and the least cardinal \u03bb with a special Aronszajn tree."
+      },
+      {
+        "name": "cofinality_splitting_number",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "Introduce the splitting number s_\u03ba and relate \u03ba < s_\u03ba \u2264 2^\u03ba, yielding new lower bounds on 2^\u03ba."
+      },
+      {
+        "name": "singular_cub_filter_bound",
+        "descriptor_delta": {
+          "delta_tokens": 9
+        },
+        "description": "Show that the existence of a CUB\u2011filter on \u03ba^{++} for singular \u03ba forces 2^\u03ba \u2265 \u03ba^{+\u03c9}."
+      }
+    ]
+  },
+  "Mathlib.LinearAlgebra.Matrix.Symmetric": {
+    "mutations": [
+      {
+        "name": "eigenvalue_interlace_principle",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "Replace a basic eigenvalue bound with the full Cauchy interlacing inequalities for principal submatrices."
+      },
+      {
+        "name": "weyl_inequality_sum",
+        "descriptor_delta": {
+          "delta_tokens": 9
+        },
+        "description": "Strengthen a trace equality to Weyl's inequalities relating eigenvalues of A,\u202fB,\u202fA\u202f+\u202fB."
+      },
+      {
+        "name": "courant_fischer_minmax",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "Introduce the min\u2013max characterisation of kth eigenvalues via subspace optimisation problems."
+      },
+      {
+        "name": "loewner_order_transitivity",
+        "descriptor_delta": {
+          "delta_tokens": 7
+        },
+        "description": "Assert that if 0 \u2264 A \u2264 B and 0 \u2264 B \u2264 C then A \u2264 C, with equality characterisation via kernels."
+      },
+      {
+        "name": "spectral_radius_norm_bound",
+        "descriptor_delta": {
+          "delta_tokens": 7
+        },
+        "description": "Relate spectral radius \u03c1(A) to operator norm \u2225A\u2225 and give strict inequality for indefinite A."
+      },
+      {
+        "name": "trace_log_det_inequality",
+        "descriptor_delta": {
+          "delta_tokens": 10
+        },
+        "description": "State the Golden\u2011Thompson\u2013type inequality tr\u202fexp(A\u202f+\u202fB) \u2264 tr\u202fexp\u202fA\u202fexp\u202fB for symmetric A,B."
+      },
+      {
+        "name": "psd_sequence_convergence",
+        "descriptor_delta": {
+          "delta_tokens": 8
+        },
+        "description": "Introduce monotone convergence of quadratic forms x\u1d40A\u2099x \u2191 x\u1d40Ax implying strong operator convergence."
+      },
+      {
+        "name": "symmetric_congruence_invariance",
+        "descriptor_delta": {
+          "delta_tokens": 7
+        },
+        "description": "Assert that A \u2245 B via P\u1d40AP = B preserves inertia and eigenvalue multiplicities."
+      },
+      {
+        "name": "determinant_lower_bound_psd",
+        "descriptor_delta": {
+          "delta_tokens": 7
+        },
+        "description": "Strengthen determinant equality to Hadamard\u2011type lower bounds det\u202fA \u2265 \u220f diag A\u1d62\u1d62 for PSD A."
+      },
+      {
+        "name": "matrix_function_calculus",
+        "descriptor_delta": {
+          "delta_tokens": 9
+        },
+        "description": "Replace an equality with a statement that a polynomial p satisfies p(A) \u2265 0 for all eigenvalues \u03bb\u1d62 \u2265 0."
+      }
+    ]
+  }
+}

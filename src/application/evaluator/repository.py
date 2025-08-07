@@ -36,9 +36,14 @@ class ConjectureEvalResultRepository:
                             "aesop_provable": result.aesop_provable,
                             "goal": result.goal,
                             "proof": result.proof,
-                            "error": None if result.error is None else result.error.model_dump_json(),
+                            "error": (
+                                None if result.error is None else (
+                                    result.error if isinstance(result.error, str) else result.error.model_dump_json()
+                                )
+                            ),
                             "created_at": result.created_at.isoformat(),
                             "conjecture": result.conjecture.context_and_statement,
+                            "context_name": result.context_name,
                         }
                     )
                     + "\n"
