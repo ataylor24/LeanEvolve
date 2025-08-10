@@ -1,4 +1,4 @@
-# LeanConjecturer
+# LeanEvolve
 
 A tool for generating mathematical conjectures using Lean 4 and AI models.
 
