@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json, pathlib, uuid
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from src.application.generator.converter import ConjectureConverter
 from src.application.generator.head_maker import ConjectureHeadMaker
@@ -12,21 +12,8 @@ from src.application.generator.llm import ConjectureGPT
 from src.application.generator.prompt_maker import PromptMaker
 from src.entity.conjecture import Conjecture
 from src.entity.conjecture_eval_result import ConjectureEvalResult
-
-_MUTATION_FILE = pathlib.Path("mutations.json")
-if _MUTATION_FILE.exists():
-    # context_id -> { op_name -> description }
-    _MUTATIONS: dict[str, dict[str, str]] = json.loads(_MUTATION_FILE.read_text())
-else:
-    _MUTATIONS = {}
-
-def get_ctx_ops(context_id: str) -> dict[str, str]:
-    """Return (and create) the operator map for this context."""
-    return _MUTATIONS.setdefault(context_id, {})
-
-def save_all() -> None:
-    """Persist all contexts' mutations."""
-    _MUTATION_FILE.write_text(json.dumps(_MUTATIONS, indent=2))
+from src.entity.mutation import Mutation
+from src.application import mutation_utils
 
 
 class ConjectureGenerator:
@@ -47,14 +34,14 @@ class ConjectureGenerator:
         self.head_maker = ConjectureHeadMaker()
         self.converter = ConjectureConverter(rename=rename)
 
-        # Expose the whole catalogue if callers want to inspect it
-        self.mutations = _MUTATIONS
-
     def generate(
         self,
         context_id: str,
         context: str,
         eval_results: Optional[List[ConjectureEvalResult]] = None,
+        elites: List[Dict[str, Mutation]] = [],
+        ctx_mutations: dict[str, Mutation] = {},
+        mutation: Optional[Mutation] = None,
         *,
         parent_code: str = "",
         operator_hint: Optional[str] = None,
@@ -65,7 +52,9 @@ class ConjectureGenerator:
         prompt = self.prompt_maker.make(
             context=context,
             parent_code=parent_code,
-            operator_hint=operator_hint,
+            mutation=mutation,
+            elites=elites,
+            ctx_mutations=ctx_mutations,
         )
         head = self.head_maker.make(context, eval_results)
 
@@ -73,11 +62,10 @@ class ConjectureGenerator:
         try:
             chosen_op = resp_obj["operator"]["name"]
             desc = resp_obj["operator"].get("description", "") or ""
-            ctx_ops = get_ctx_ops(context_id)
-
-            if chosen_op not in ctx_ops:
-                ctx_ops[chosen_op] = desc
-                save_all()
+            if chosen_op not in ctx_mutations:
+                # Persist into mutations.json via mutation_utils API
+                mutation_utils.add_op(context_id, chosen_op, desc)
+                ctx_mutations[chosen_op] = {"name": chosen_op, "description": desc}
         except (KeyError, TypeError):
             malformed_dir = Path("malformed_json")
             malformed_dir.mkdir(exist_ok=True)
@@ -86,7 +74,8 @@ class ConjectureGenerator:
             raise ValueError(f"Malformed LLM response (saved to {fname}).") from None
 
         conjectures: List[Conjecture] = []
-        op_desc = get_ctx_ops(context_id).get(chosen_op, "")
+        chosen_op = mutation.name if isinstance(mutation, Mutation) else resp_obj["operator"]["name"]
+        op_desc = mutation.description if isinstance(mutation, Mutation) else resp_obj["operator"]["description"]
         for stmt in resp_obj["conjectures"]:
             conjectures.extend(
                 self.converter.convert(

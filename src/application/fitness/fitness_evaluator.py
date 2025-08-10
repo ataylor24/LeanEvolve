@@ -8,6 +8,7 @@ from typing import List, Tuple, Set, Dict, Any
 from kimina_client.models import Snippet
 import math
 import json
+from src.entity.conjecture_eval_result import ConjectureEvalResult
 
 class FitnessEvaluator:
     def __init__(self, prover_model_name: str, llm_model_name: str, llm_api_key: str, kimina_proc: KiminaPool):
@@ -22,30 +23,32 @@ class FitnessEvaluator:
         proofs_per_conj: List[List[str]],     # k proof tails per statement[i]
         *,
         accept_sorry: bool = False,
-    ) -> Tuple[Set[int], Set[int], Dict[int, int]]:
+    ) -> Tuple[Set[int], Set[int], Dict[int, List[str]]]:
         """
         Returns:
         verified_idx:     set of i where ANY of the k proofs verified
         unverified_idx:   set of i where NONE verified
-        best_idx:         map i -> j (the first j that verified), if any
+        verified_proofs:  map i -> list of proofs that verified
         """
         results_grouped = self.kimina_proc.verify_proofs_passk(conjectures, proofs_per_conj)
 
         verified_idx: Set[int] = set()
         unverified_idx: Set[int] = set()
-        best_idx: Dict[int, int] = {}
+        verified_proofs: Dict[int, List[str]] = {}
 
         for i, res_list in enumerate(results_grouped):
             any_ok = False
             for j, r in enumerate(res_list):
                 if self._is_verified(r, accept_sorry=accept_sorry):
                     verified_idx.add(i)
-                    best_idx[i] = j
+                    if i not in verified_proofs:
+                        verified_proofs[i] = []
+                    verified_proofs[i].append(r)
                     any_ok = True
                     break
             if not any_ok:
                 unverified_idx.add(i)
-        return verified_idx, unverified_idx, best_idx
+        return verified_idx, unverified_idx, verified_proofs
 
     def _is_verified(self, entry: dict, *, accept_sorry: bool = False) -> bool:
 
@@ -85,12 +88,11 @@ class FitnessEvaluator:
         neg_proofs_k = self.prover.generate_k(negated_conjectures)  # defaults to self.prover.num_return_sequences
 
         # 3) evaluate pass@k
-        neg_verified_idx, neg_unverified_idx, _ = self._evaluate_proofs_passk(
+        neg_verified_idx, neg_unverified_idx, neg_verified_proofs = self._evaluate_proofs_passk(
             negated_conjectures, neg_proofs_k, accept_sorry=False
         )
-        with open("neg_proofs_k.json", "w") as f:
-            json.dump(neg_proofs_k, f)
-        return neg_verified_idx, neg_unverified_idx, neg_proofs_k
+       
+        return neg_verified_idx, neg_unverified_idx, neg_verified_proofs
     
     def _qbin(self, x: float) -> int:
         """Clamp to [0,100] and quantize to nearest multiple of 5 (conservative: round down on .5)."""
@@ -139,10 +141,11 @@ class FitnessEvaluator:
         )
         return self._qbin(overall)
 
-    def evaluate_fitness(self, context: str, parent_code: str, conjectures: List[Conjecture]) -> List[Dict[str, Any]]:
+    def evaluate_fitness(self, context: str, parent_code: str, results: List[ConjectureEvalResult]) -> List[Dict[str, Any]]:
         # ---------------- 1) forward provability via pass@k -------------------------
+        conjectures = [result.conjecture for result in results if result.passed]
         forward_proofs_k = self.prover.generate_k(conjectures)  # List[List[str]]
-        verified_idx, unverified_idx, best_idx = self._evaluate_proofs_passk(
+        verified_idx, unverified_idx, verified_proofs = self._evaluate_proofs_passk(
             conjectures, forward_proofs_k, accept_sorry=False
         )
 
@@ -150,7 +153,7 @@ class FitnessEvaluator:
         likely_false_flags_by_i: Dict[int, bool] = {}
         if unverified_idx:
             unverified_list = [conjectures[i] for i in sorted(unverified_idx)]
-            neg_verified_idx_subset, _, neg_proofs_k = self._inverse_provability(unverified_list)
+            neg_verified_idx_subset, _, neg_verified_proofs = self._inverse_provability(unverified_list)
             idx_map = {local_i: global_i for local_i, global_i in enumerate(sorted(unverified_idx))}
             for local_i in neg_verified_idx_subset:
                 likely_false_flags_by_i[idx_map[local_i]] = True
@@ -219,7 +222,12 @@ class FitnessEvaluator:
                 "overall": overall_llm,
                 "flags": flags,
                 "justification": judged_conjecture.get("justification", ""),
-                "best_proof_k": (best_idx[i] if i in best_idx else None),
+                "verified_proofs": (verified_proofs[i] if i in verified_proofs else None),
+                "neg_verified_proofs": (neg_verified_proofs[i] if i in neg_verified_proofs else None),
             })
+            
+        with open("fitness_results.json", "a") as f:
+            json.dump(fitness_results, f, indent=2)
+            f.write("\n")
 
         return fitness_results

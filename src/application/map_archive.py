@@ -34,6 +34,7 @@ from typing import Dict, Tuple, List, Any
 
 from .map_config import MapConfig
 from . import program_db  # for append_legacy / load_legacy
+from src.entity.mutation import Mutation
 
 # ---------------------------------------------------------------------------
 # Globals – intentionally simple
@@ -118,11 +119,39 @@ def init_archive(cfg: MapConfig | None = None) -> None:
     load_existing()
 
 
-def clear_elites() -> None:
+def clear_all_elites() -> None:
     """Drop *all* current elites from memory (optionally between iterations)."""
     global _elite_map, _dirty
     _elite_map.clear()
     _dirty = True
+
+
+def prune_underperformers() -> None:
+    """Remove elites that fall below the configured fitness threshold or are stale.
+
+    Uses MapConfig.prune_threshold (absolute on entry['fitness_score']) and
+    MapConfig.stale_after_sec relative to entry['timestamp'].
+    """
+    global _elite_map, _cfg, _dirty
+    assert _cfg is not None, "Archive not initialised"
+    if not _elite_map:
+        return
+    now_ts = int(time.time())
+    threshold = float(getattr(_cfg, "prune_threshold", 0.0))
+    staleness = int(getattr(_cfg, "stale_after_sec", 0))
+    to_delete = []
+    for key, rec in _elite_map.items():
+        score = float(rec.get("fitness_score", 0.0))
+        ts = int(rec.get("timestamp", 0))
+        is_under = score < threshold
+        is_stale = staleness > 0 and (now_ts - ts) >= staleness
+        if is_under or is_stale:
+            to_delete.append(key)
+    if to_delete:
+        for k in to_delete:
+            _elite_map.pop(k, None)
+        _dirty = True
+        print(f"[map_archive] Pruned {len(to_delete)} underperforming/stale elites")
 
 
 def update_elites(entry: Dict[str, Any]) -> None:
@@ -165,6 +194,8 @@ def update_elites(entry: Dict[str, Any]) -> None:
 def get_all_elites() -> List[Dict[str, Any]]:
     return list(_elite_map.values())
 
+def get_elite_mutations() -> List[Mutation]:
+    return [Mutation(**elite) for elite in get_all_elites()]
 
 def sample_parents(k: int = 2) -> List[Dict[str, Any]]:
     elites = get_all_elites()

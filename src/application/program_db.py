@@ -35,7 +35,7 @@ def append(entry: Dict[str, Any]) -> str:
 
 def load(min_score: float = 0.0) -> List[Dict[str, Any]]:
     """Load all records with score ≥ min_score into memory."""
-    return [r for r in _jsonl_reader() if r.get("score", 0.0) >= min_score]  # filter keeps RAM small
+    return [r for r in _jsonl_reader() if r.get("fitness_score", 0.0) >= min_score]  # filter keeps RAM small
 
 
 def sample_parents(k: int = 2) -> List[Dict[str, Any]]:
@@ -47,7 +47,7 @@ def sample_parents(k: int = 2) -> List[Dict[str, Any]]:
     if not records:
         return []
     beta_draws = [
-        (r, random.betavariate(r["score"] + 1, 2 - r["score"]))
+        (r, random.betavariate(r["fitness_score"] + 1, 2 - r["fitness_score"]))
         for r in records
     ]
     beta_draws.sort(key=lambda x: x[1], reverse=True)

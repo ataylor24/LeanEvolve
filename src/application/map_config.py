@@ -21,19 +21,21 @@ class MapConfig:
         "n_idx,d_idx,depth_idx" (comma-separated integers) to the elite record.
     """
 
-    dims: Tuple[str, ...] = ("novelty", "difficulty", "depth", "relevance", "provability_estimate", "form")
+    dims: Tuple[str, ...] = ("novelty", "difficulty", "depth", "provability_estimate")
     bins: Dict[str, int] = field(
         default_factory=lambda: {
             "novelty": 10,
             "difficulty": 10,
             "depth": 10,
-            "relevance": 10,
             "provability_estimate": 10,
-            "form": 10,
         }
     )
     reset_each_iter: bool = False
     file_path: str = "data/program_map.json"
+    # Pruning configuration: drop elites below this fitness threshold and
+    # optionally prune if an elite has not been updated for `stale_after_sec`.
+    prune_threshold: float = 0.0   # keep all by default
+    stale_after_sec: int = 0       # 0 disables staleness pruning
 
     def __post_init__(self) -> None:
         # basic validation

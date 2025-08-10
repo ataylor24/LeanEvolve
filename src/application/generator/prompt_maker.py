@@ -2,7 +2,8 @@
 from __future__ import annotations
 from src.entity.conjecture import Conjecture
 from src.entity.prompt import Prompt
-
+from src.entity.mutation import Mutation
+from typing import List, Dict, Any
 
 class PromptMaker:
     """
@@ -84,7 +85,9 @@ class PromptMaker:
         self,
         context: str,
         parent_code: str = "",
-        operator_hint: str | None = None
+        elites: List[Dict[str, Mutation]] = [],
+        ctx_mutations: dict[str, Mutation] = {},
+        mutation: Mutation | None = None,
     ) -> Prompt:
         # ---------- build the user‑prompt ----------
         parts: list[str] = []
@@ -98,26 +101,51 @@ class PromptMaker:
             parts.append("\n## Parent statement to mutate:")
             parts.append(f"```lean\n{parent_code}\n```")
 
-        # 3. optional operator instruction
-        if operator_hint:
-            if operator_hint == "_NOVEL_":
+        # 3a. Elite examples to inspire mutations (operator + statement only)
+        if elites:
+            parts.append("\n## Elite examples (operator, description, theorem statements):")
+            for e in elites[:10]:  # keep prompt bounded
+                op_name = e.get("operator_id") or e.get("operator", {}).get("name", "<op>")
+                # Try fitness_features->meta for description; else fallbacks
+                meta = e.get("fitness_features", {})
+                op_desc = meta.get("description") or e.get("operator", {}).get("description", "") or e.get("description", "")
+                # Extract statement only (remove context/imports)
+                lean_code = e.get("lean_code", "").split("theorem")
+                stmt = ("theorem" + lean_code[-1]) if len(lean_code) > 1 else e.get("lean_code", "")
+                # Safe-fence separate code block
+                parts.append(f"### {op_name}: {op_desc}\n```lean\n{stmt}\n```")
+
+        # 3b. operator instruction
+        if mutation:
+            if mutation.name == "_NOVEL_":
+                parts.append("## Existing operators:")
+                for op_id, op in ctx_mutations.items():
+                    parts.append(f"### {op_id}: {op.name}: {op.description}")
+
+                # ---------- NOVEL mutation prompt ----------
                 parts.append(
                     "\n## Mutation instruction:\n"
-                    "Please invent a *brand‑new* mutation operator. "
-                    "Return its name in the JSON field \"operator.name\" and add a "
-                    "1‑sentence \"description\"."
-                    "The operator should be a new mutation operator that is not in the list of existing operators."
-                    "Please create a mutation operator that adheres to the following constraints:\n"
-                    "1. Is not a trivial edit that involves adding or removing a trivial premise.\n"
-                    "2. Is not a 'cosmetic' edit that can be solved by exact.\n"
-                    "3. Yields conjectures that cannot be proved by simp, ring, etc.\n"
-                    "4. Yields conjectures that are not already in the list of existing operators.\n"
+                    "Invent **one brand-new mutation operator** that is *not* already listed in "
+                    "the Existing or Elite operator sections.\n\n"
+                    "**Hard constraints (MUST be satisfied):**\n"
+                    "1. **Originality** – The `operator.name` must be unique and capture a genuinely "
+                    "different transformation (no re-labelled duplicates, supersets, or subsets).\n"
+                    "2. **Substantive change** – The operator must modify the logical *structure* of a "
+                    "statement; it may not be a cosmetic edit (e.g. renaming variables, adding/removing "
+                    "a tautology, or re-ordering premises).\n"
+                    "3. **Non-triviality** – Conjectures produced by this operator should not be provable "
+                    "immediately by tactics such as `exact`, `rfl`, `simp`, `ring`, `aesop`, etc.\n"
+                    "4. **Distinct from other mutations** – Do not merely negate, dualise, or restrict an "
+                    "existing operator unless the resulting behaviour is meaningfully new.\n\n"
+                    "Take inspiration from the *style* and *depth* of the Elite operators above, but do "
+                    "*not* replicate their mechanisms.\n\n"
+                    f"Please apply the created mutation to the parent statement.\n"
                 )
             else:
                 parts.append(
                     f"\n## Mutation instruction:\n"
-                    f"Please apply the mutation **<{operator_hint}>** "
-                    f"to the parent statement."
+                    f"Please apply the mutation **<{mutation.name}>** "
+                    f"to the parent statement.\n{mutation.name}: {mutation.description}"
                 )
         # 4. closing cue for the LLM
         parts.append("\n## Your new theorem(s):")

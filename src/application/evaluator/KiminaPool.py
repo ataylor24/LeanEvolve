@@ -176,7 +176,7 @@ class KiminaPool:
             -- Use #eval! because the file contains a sorry-proof.
             #eval! Lean.Meta.MetaM.run' do
             -- Look up the original constant and build `¬ P` where `P` is its type
-            let P    ← Lean.Meta.inferType (Lean.mkConst ``{orig_name})
+            let P    ← Lean.Meta.inferType (← Lean.Meta.mkConstWithFreshMVarLevels ``{orig_name})
             let notP := Lean.mkApp (Lean.mkConst ``Not) P
             let e'   ← _pushNegExpr notP
             -- Pretty print the resulting expression and emit a single-line declaration

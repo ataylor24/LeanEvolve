@@ -1,1 +1,4 @@
 Mathlib.Analysis.Complex.Arg
+Mathlib.Algebra.Squarefree.Basic
+Mathlib.SetTheory.Cardinal.Arithmetic
+Mathlib.LinearAlgebra.Matrix.Symmetric

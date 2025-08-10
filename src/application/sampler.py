@@ -25,7 +25,11 @@ def update_operator_stats(operator_id: str, reward: float) -> None:
 def choose_parents(k: int = 2) -> List[Dict[str, Any]]:
     """Select parents uniformly from current MAP-Elites archive.
     Falls back to legacy ProgramDB if the archive is empty."""
-    return parents_source.sample_parents(k=k)
+    elites = parents_source.sample_parents(k=k)
+    if elites:
+        return elites
+    # Fallback: Thompson-sample from historical DB
+    return program_db.sample_parents(k=k)
 
 
 def choose_operator(operators: List[str], step: int = 0) -> str:

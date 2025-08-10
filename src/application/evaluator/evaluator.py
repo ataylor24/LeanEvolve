@@ -163,7 +163,7 @@ class ConjectureEvaluator:
                     passed=False if proved else True,
                     already_exists=False,
                     aesop_provable=proved,
-                    error=None if proved else "aesop_failed",
+                    error=None,
                     goal=None,
                     proof="aesop?" if proved else None,
                     context_name=context_name,

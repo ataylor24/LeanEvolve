@@ -61,7 +61,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max_iter",
         type=int,
-        default=1,
+        default=3,
         help="The number of iterations to run.",
     )
     parser.add_argument(
