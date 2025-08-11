@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import List
 
 from pydantic import BaseModel
 
@@ -26,11 +27,12 @@ class ConjectureEvalResult(BaseModel):
 
     conjecture: Conjecture
     passed: bool
-    already_exists: bool
+    non_trivial_provable: bool
+    non_trivial_neg_provable: bool
+    exact_provable: bool
     aesop_provable: bool
     error: LeanProcessorResponse | str | None
-    goal: str | None
-    proof: str | None
+    proofs: List[str] | None | str
     id: uuid.UUID
     created_at: datetime
     context_name: str
@@ -46,11 +48,12 @@ class ConjectureEvalResult(BaseModel):
         cls,
         conjecture: Conjecture,
         passed: bool,
-        already_exists: bool,
+        non_trivial_provable: bool,
+        non_trivial_neg_provable: bool,
+        exact_provable: bool,
         aesop_provable: bool,
         error: LeanProcessorResponse | None,
-        goal: str | None,
-        proof: str | None,
+        proofs: List[str] | str | None,
         context_name: str,
         iter_num: int,
     ):
@@ -58,11 +61,12 @@ class ConjectureEvalResult(BaseModel):
         return cls(
             conjecture=conjecture,
             passed=passed,
-            already_exists=already_exists,
+            non_trivial_provable=non_trivial_provable,
+            non_trivial_neg_provable=non_trivial_neg_provable,
+            exact_provable=exact_provable,
             aesop_provable=aesop_provable,
             error=error,
-            goal=goal,
-            proof=proof,
+            proofs=proofs,
             id=uuid.uuid4(),
             created_at=datetime.now(), 
             context_name=context_name,

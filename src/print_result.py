@@ -7,7 +7,7 @@ def pretty_print_jsonl(filename: str) -> None:
             try:
                 item = json.loads(line)
                 if (
-                    item["already_exists"] is False
+                    item["exact_provable"] is False
                     and item["aesop_provable"] is False
                     and item["error"] is None
                 ):

@@ -34,28 +34,77 @@ class PromptMaker:
         "escape sequences (e.g. \\u2200)."
     )
     
-    _EVOLVE_SYSTEM_PROMPT = (
-        "You are “Lean‑Mutator‑GPT”, an assistant whose sole task is to invent AS MANY  **new Lean 4 theorem"
-        "statements** AS POSSIBLE by *applying a specific **mutation operator*** to a *parent* statement that is"
-        "supplied to you.\n"
+    # _EVOLVE_SYSTEM_PROMPT = (
+    #     "You are “Lean‑Mutator‑GPT”, an assistant whose sole task is to invent AS MANY  **new Lean 4 theorem"
+    #     "statements** AS POSSIBLE by *applying a specific **mutation operator*** to a *parent* statement that is"
+    #     "supplied to you.\n"
 
+    #     "INPUTS YOU WILL RECEIVE (always in this order)\n"
+    #     "1. ## Original file:      – a truncated slice of Lean source code for context only, don’t copy!\n"
+    #     "2. ## Parent statement:   – exactly one existing theorem or lemma in Lean 4 syntax.\n"
+    #     "3. ## Mutation instruction:   – the name of a mutation operator (e.g. <weaken_result>,"
+    #     "<upgrade_metric>, <symmetrize_indices>).  Apply **only** this operator.\n"
+
+    #     "YOUR TASK\n"
+    #     "• Produce **as many new theorem statements as possible** that are:\n"
+    #     "  – syntactically valid Lean 4,\n"
+    #     "  – compilable without extra imports,\n"
+    #     "  – *semantically* related to the parent (the mutation operator’s intent must be obvious),\n"
+    #     "  – **not identical** to any theorem already shown in the context.\n"
+
+    #     "Respond with **one JSON object** and *nothing else*.\n"
+    #     "The object **must exactly match** this schema:\n"
+
+    #     "{"  # single JSON object, no outer list
+    #     "  \"operator\": {"
+    #     "    \"name\": \"<mutation operator>\","
+    #     "    \"description\": \"<one-sentence description of the operator>\""
+    #     "  },"
+    #     "  \"conjectures\": ["
+    #     "    \"<Lean theorem 1>\","
+    #     "    \"... (as many as you can)\""
+    #     "  ]"
+    #     "}" 
+
+    #     "CONSTRAINTS\n"
+    #     "• No proofs, tactics, comments, or “sorry” – just the := by stub.\n"
+    #     "• Use standard math symbols (∀, ∃, ≤, √) not Unicode escapes (e.g. \u2200).\n"
+    #     "• Do not add open, import, or namespace lines.\n"
+    #     "• Choose fresh, descriptive names (<NewName*>) to avoid clashes.\n"
+    #     "• Keep each statement under 500 tokens.\n"
+    #     "• Use standard mathematical symbols (e.g. ∀, ∃, √) instead of Unicode "
+    #     "escape sequences (e.g. \\u2200).\n"
+
+    #     "SCORING HINTS (used by an external evaluator)\n"
+    #     "• Edits that introduce novel identifiers and increase reasoning depth score higher.\n"
+    #     "• Statements that fail to type‑check score zero.\n"
+        
+    # )
+    _EVOLVE_SYSTEM_PROMPT = (
+        "You are “Lean-Mutator-GPT”, an assistant whose sole task is to invent AS MANY **new Lean 4 theorem "
+        "statements** AS POSSIBLE by *applying exactly one specified mutation operator* to a *parent* statement "
+        "that is supplied to you. Your goal is to generate **provable** and **Mathlib-friendly** lemmas: they should "
+        "be routine consequences of the parent plus standard Mathlib facts (no new heavy theory).\n"
+        "\n"
         "INPUTS YOU WILL RECEIVE (always in this order)\n"
         "1. ## Original file:      – a truncated slice of Lean source code for context only, don’t copy!\n"
-        "2. ## Parent statement:   – exactly one existing theorem or lemma in Lean 4 syntax.\n"
-        "3. ## Mutation instruction:   – the name of a mutation operator (e.g. <weaken_result>,"
-        "<upgrade_metric>, <symmetrize_indices>).  Apply **only** this operator.\n"
-
+        "2. ## Parent statement:   – exactly one existing theorem or lemma in Lean 4 syntax (binders show the ambient types).\n"
+        "3. ## Mutation instruction:   – the name of ONE mutation operator (e.g. \<squarefree\_mul\_coprime\_iff>, "
+        "\<arg\_right\_half\_plane\_bound>, \<cardinal\_collapse>, \<loewner\_monotone>). Apply **only** this operator.\n"
+        "\n"
         "YOUR TASK\n"
         "• Produce **as many new theorem statements as possible** that are:\n"
-        "  – syntactically valid Lean 4,\n"
-        "  – compilable without extra imports,\n"
-        "  – *semantically* related to the parent (the mutation operator’s intent must be obvious),\n"
-        "  – **not identical** to any theorem already shown in the context.\n"
-
+        "  – syntactically valid Lean 4 and **type-checkable**,\n"
+        "  – compilable **without extra imports**, assuming only what the parent’s context already imports,\n"
+        "  – *semantically tied* to the parent (the operator’s intent must be obvious),\n"
+        "  – **not identical** to any statement already shown in the Original file.\n"
+        "• **Provability filter (mandatory):** Only emit statements that are straightforward consequences of the parent "
+        "  together with standard Mathlib lemmas. If uncertain a statement is derivable, **do not include it**.\n"
+        "\n"
         "Respond with **one JSON object** and *nothing else*.\n"
         "The object **must exactly match** this schema:\n"
-
-        "{"  # single JSON object, no outer list
+        "\n"
+        "{"
         "  \"operator\": {"
         "    \"name\": \"<mutation operator>\","
         "    \"description\": \"<one-sentence description of the operator>\""
@@ -64,22 +113,49 @@ class PromptMaker:
         "    \"<Lean theorem 1>\","
         "    \"... (as many as you can)\""
         "  ]"
-        "}" 
-
+        "}"  # single JSON object, no outer list
+        "\n"
         "CONSTRAINTS\n"
-        "• No proofs, tactics, comments, or “sorry” – just the := by stub.\n"
-        "• Use standard math symbols (∀, ∃, ≤, √) not Unicode escapes (e.g. \u2200).\n"
-        "• Do not add open, import, or namespace lines.\n"
-        "• Choose fresh, descriptive names (<NewName*>) to avoid clashes.\n"
+        "• No proofs, tactics, comments, or “sorry” – just the declaration with `:= by` stub.\n"
+        "• Use standard math symbols (∀, ∃, ≤, √) **not** Unicode escapes (e.g. \u2200).\n"
+        "• Do not add `open`, `import`, or `namespace` lines.\n"
+        "• Choose fresh, descriptive names (e.g., <ParentName>*mut*\*) to avoid clashes.\n"
         "• Keep each statement under 500 tokens.\n"
-        "• Use standard mathematical symbols (e.g. ∀, ∃, √) instead of Unicode "
-        "escape sequences (e.g. \\u2200).\n"
-
+        "• **Preserve the ambient universe and types** from the parent (if the parent is in ℕ, stay in ℕ; "
+        "  if it’s `Matrix (Fin n) (Fin n) 𝕂`, keep the same shape n and 𝕂).\n"
+        "• **Make all side-conditions explicit** so the statement is total and Lean-safe (e.g., `z ≠ 0` for division/Arg, "
+        "  `Nat.Coprime m n` for multiplicative splits, bounds like `2 ≤ k` for powers).\n"
+        "• **No hidden casts across domains.** If moving between ℕ, ℤ, ℝ, or ℂ, use explicit coercions/|·| and state the needed bounds.\n"
+        "• **Do not introduce new structures or heavy theory** absent from the parent (avoid analytic continuation, "
+        "  measure theory, independence results, deep spectral/PCF machinery, etc.). Prefer routine Tier-A facts.\n"
+        "\n"
+        "TIER-A OPERATOR BEHAVIOR (what to generate when relevant)\n"
+        "• Algebra / Squarefree & radicals: equivalences (`Squarefree n ↔ radical n = n` over ℕ; use |n| over ℤ), "
+        "  divisor-closure (`d ∣ n → Squarefree d`), product criteria with `Coprime`, radical multiplicativity under coprime, "
+        "  “no square divides a square-free,” structure of divisors of `n^k` with `d = d₀*m^2`, and divisor/subset bijections.\n"
+        "• Complex / Arg (principal branch): safe facts like `Arg (a*z) = Arg z` for real `a > 0`, `Arg (z⁻¹) = -Arg z`, "
+        "  bounds on half-planes (`Re z > 0 → -π/2 < Arg z < π/2`), additive/subtractive laws on a fixed branch with explicit "
+        "  non-cut conditions, and along a C¹ path γ avoiding 0: `d/dt Arg(γ(t)) = Im(γ'(t)/γ(t))`.\n"
+        "• Cardinals (ZFC only): Cantor `κ < 2^κ`, König `κ^{cf κ} > κ`, collapses for sums/products/finite powers of infinite "
+        "  cardinals, size of finite subsets/finite sequences, Hartogs bound, `κ × κ ≃ κ`. Avoid CH/GCH/PCF/Easton.\n"
+        "• Symmetric/Hermitian matrices: Loewner transitivity, Sylvester inertia under congruence, PSD square-root existence "
+        "  and monotonicity, Rayleigh bounds, Courant–Fischer characterizations, eigenvalues real for symmetric/Hermitian, "
+        "  orthogonal/unitary diagonalization (when parent already fixes 𝕂 and finite dim), eigenvalue monotonicity under `A ≼ B`, "
+        "  and `ρ(A) = ‖A‖₂` for symmetric.\n"
+        "\n"
+        "SAFETY CHECKLIST (apply before emitting each conjecture)\n"
+        "1) **Types match** the parent’s binders; no free variables.\n"
+        "2) **Totality:** all partial operations guarded (inverses/division require `≠ 0`).\n"
+        "3) **Domains coherent:** ℤ vs ℕ (use |·| in ℤ), ℝ vs ℂ (don’t introduce IsROrC unless present).\n"
+        "4) **Operator intent visible:** each statement is a clear instance of the given operator (not cosmetic renaming).\n"
+        "5) **Lightweight proof path exists** using standard Mathlib lemmas likely available from the parent’s imports.\n"
+        "\n"
         "SCORING HINTS (used by an external evaluator)\n"
-        "• Edits that introduce novel identifiers and increase reasoning depth score higher.\n"
-        "• Statements that fail to type‑check score zero.\n"
-        
+        "• Parametric families (over indices/exponents/subspaces) score higher than singletons.\n"
+        "• Deep but **routine** reasoning (equivalences, monotonicity, closure) scores higher than cosmetic rewrites.\n"
+        "• Statements that fail to type-check score zero.\n"
     )
+
 
     def make(
         self,
@@ -160,15 +236,16 @@ class PromptMaker:
 
         Scoring dimensions (0–100, use multiples of 5; be conservative and prefer the lower bin):
         - novelty:
-        0 = restatement/vacuous rewrite; 50 = minor but real change; 100 = substantive structural/quantifier/hypothesis shift not present in parent/context.
+        0 = restatement/vacuous rewrite; 50 = minor but real change; 100 = substantive structural/quantifier/hypothesis shift such that the conjecture is not present in parent/context.
         - provability_estimate:
         0 = very likely false/ill-typed; 30 = unclear with obstacles; 60 = probably true but nontrivial; 90 = very likely true under standard domain lemmas.
-        - depth (reasoning sophistication introduced):
-        0 = trivial rewrite (e.g., ∧ True, syntactic restyle); 50 = modest lemma reuse/new case; 100 = introduces/nontrivially uses new dependency or subtle weaken/strengthen.
-        - difficulty (predicted Lean/Aesop effort to prove):
+        - difficulty (estimated Lean/Aesop effort to prove):
         0 = one-liner by simp/linarith; 50 = short multi-step with standard lemmas; 80 = case splits or specialized algebraic facts; 100 = likely needs auxiliary lemmas or longer search.
 
-        Flags (boolean): trivial_pattern, restatement, likely_false, ill_typed.
+        Flags (boolean): trivial_pattern, restatement, ill_typed.
+        - trivial_pattern: the conjecture is a trivial pattern (e.g., ∧ True, syntactic restyle).
+        - restatement: the conjecture is a restatement of the parent or of a conjecture in the context.
+        - ill_typed: the conjecture is ill-typed.
 
         Justification: ≤25 words, cite concrete syntactic/semantic change and (if relevant) specific operators/lemmas.
 
@@ -180,14 +257,11 @@ class PromptMaker:
             "scores": {
                 "novelty": 0-100,
                 "provability_estimate": 0-100,
-                "depth": 0-100,
                 "difficulty": 0-100
             },
-            "overall": 0-100,
             "flags": {
                 "trivial_pattern": bool,
                 "restatement": bool,
-                "likely_false": bool,
                 "ill_typed": bool
             },
             "justification": "≤25 words…"
@@ -196,22 +270,13 @@ class PromptMaker:
         }
 
         Hard rules and caps (must enforce):
-        - If ill_typed = true: set provability_estimate = 0; set novelty ≤ 5; set depth ≤ 10; set difficulty ≤ 10; set overall ≤ 20; justification must mention the type issue.
-        - If likely_false = true (but well-typed): set provability_estimate ≤ 30; set overall ≤ 50.
-        - If restatement = true OR trivial_pattern = true: set novelty ≤ 10; set depth ≤ 20; set difficulty ≤ 30; cap overall ≤ 40.
+        - If ill_typed = true: set provability_estimate = 0; set novelty ≤ 5; set difficulty ≤ 10; justification must mention the type issue.
+        - If restatement = true OR trivial_pattern = true: set novelty ≤ 10; set difficulty ≤ 30; justification must mention the restatement or trivial pattern.
         - If novelty ≥ 70, both restatement and trivial_pattern MUST be false and justification MUST reference a structural change (e.g., quantifier flip, new hypothesis, weakening/strengthening).
-        - If justification cites only contraposition or direction-dropping of an existing iff, then novelty ≤ 40 and depth ≤ 50.
-        - If the change is a pure rephrasing (e.g., x/y instead of arg x = arg y) without new reasoning burden, depth ≤ 40 and difficulty ≤ 50.
+        - If justification cites only contraposition or direction-dropping of an existing iff, then novelty ≤ 40 and difficulty ≤ 50.
+        - If the change is a pure rephrasing (e.g., x/y instead of arg x = arg y) without new reasoning burden, difficulty ≤ 40.
         - Do NOT fabricate proofs. If you cannot articulate a plausible lemma path, set provability_estimate ≤ 60 and difficulty ≥ depth.
         - Quantize all scores to {0,5,10,…,100}. When uncertain between bins, choose the lower one.
-
-        Overall (compute, then apply the caps above):
-        overall = round(
-        0.40 * novelty +
-        0.30 * depth +
-        0.20 * difficulty +
-        0.10 * provability_estimate
-        )
 
         Return JSON only. No trailing commas. No text outside JSON.
 

@@ -9,7 +9,7 @@ class Prover:
     def __init__(
         self,
         model_id: str,
-        tensor_parallel_size: int = 4,
+        tensor_parallel_size: int = 2,
         max_tokens: int = 8192,
         num_return_sequences: int = 32,   # ← pick your default k
         gpu_memory_utilization: float = 0.75,

@@ -73,23 +73,17 @@ class ConjectureGPT:
         "mode": "parent" | "context",
         "judged_conjectures": [
             {
-            "id": "c1",
             "scores": {
                 "novelty": 0-100,
-                "relevance": 0-100,
                 "provability_estimate": 0-100,
-                "depth": 0-100,
-                "form": 0-100
+                "difficulty": 0-100
             },
-            "overall": 0-100,
-            "confidence": 0.0-1.0,
             "flags": {
                 "trivial_pattern": bool,
                 "restatement": bool,
-                "likely_false": bool,
                 "ill_typed": bool
             },
-            "justification": "≤25 words"
+            "justification": "≤25 words…"
             }
         ]
         }
@@ -100,22 +94,16 @@ class ConjectureGPT:
         class Scores(BaseModel):
             novelty: Score
             provability_estimate: Score
-            depth: Score
             difficulty: Score
 
         class Flags(BaseModel):
             trivial_pattern: bool
             restatement: bool
-            likely_false: bool
             ill_typed: bool
 
         class JudgedItem(BaseModel):
-            id: str
             scores: Scores
-            overall: Score
-            confidence: confloat(ge=0.0, le=1.0) = 0.5
             flags: Flags
-            # Keep the justification short; the prompt should enforce this.
             justification: str = Field(max_length=180)
 
         class JudgeResponse(BaseModel):

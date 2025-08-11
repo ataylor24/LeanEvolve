@@ -18,6 +18,7 @@ class ConjectureRepository:
                             "conjecture": conjecture.context_and_statement,
                             "generate_err": conjecture.generate_err,
                             "created_at": conjecture.created_at.isoformat(),
+                            "proof": conjecture.proof,
                         }
                     )
                     + "\n"

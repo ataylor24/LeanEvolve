@@ -28,10 +28,10 @@ class ConjecturerPipeline:
     ) -> None:
         kimina_proc = KiminaPool("http://localhost", timeout=120, num_proc=16, batch_size=32)
         generator = ConjectureGenerator(model_name, api_key)
-        evaluator = ConjectureEvaluator(kimina_proc)
+        evaluator = ConjectureEvaluator(kimina_proc, fitness_prover_model)
         repository = ConjectureRepository()
         eval_repository = ConjectureEvalResultRepository()
-        fitness_evaluator = FitnessEvaluator(prover_model_name=fitness_prover_model, llm_model_name=fitness_llm_model, llm_api_key=api_key, kimina_proc=kimina_proc)
+        fitness_evaluator = FitnessEvaluator(llm_model_name=fitness_llm_model, llm_api_key=api_key, kimina_proc=kimina_proc)
         
         # Initialise MAP archive with default config; you can tune prune thresholds here
         cfg = map_archive.MapConfig()
@@ -88,30 +88,35 @@ class ConjecturerPipeline:
                     eval_repository.save(results)
                     print(f"Saved {len(results)} evaluation results to repository")
 
+                print("Updating context...")
                 conjecture_eval_results.extend(results)
-                context, updated = ContextMaker.make(context, conjecture_eval_results)
+                context, updated = ContextMaker.make(context, conjecture_eval_results, iter_num)
                 if not updated:
                     print("No new conjectures found")
-                    break
-                print("Updated context:...")
+                    continue
                 
+                print("Evaluating fitness...")
                 fitness_results = fitness_evaluator.evaluate_fitness(context,
                         parent_code, results)
                 for fitness, result, conjecture in zip(fitness_results, results, conjectures):
                     print(f"Fitness: {fitness}")
                     record = {
                         "parent_id": parents[0]["id"] if parents else None,
-                        "context": context,
+                        "id": str(result.id),
+                        "iter_num": result.iter_num,
+                        "context": context_id,
                         "operator_id": chosen_op,
                         "lean_code": conjecture.code,
                         # Reward should correlate with success; use normalized fitness_score for DB
-                        "validity": float(result.passed), 
+                        "validity": float(result.passed),
+                        "verifiable": fitness["verifiability"],
                         "fitness_score": fitness["fitness_score"],
                         "fitness_features": fitness,
+                        "map_scores": fitness["map_scores"],
                     }
                     if not testing:
                         print("Updating program database...")
-                        record["id"] = program_db.append(record)
+                        program_db.append(record)
                         # Use fitness_score as the operator reward (not inverted 'passed')
                         sampler.update_operator_stats(chosen_op, float(record["fitness_score"]))
                         # --- MAP-Elites style archive update ---

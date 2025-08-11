@@ -24,7 +24,7 @@ class ConjectureHeadMaker:
                 [
                     eval_result.conjecture.sorry_statement
                     for eval_result in eval_results
-                    if not eval_result.already_exists and eval_result.error is None
+                    if not eval_result.exact_provable and not eval_result.aesop_provable and eval_result.error is None
                 ]
             )
         )

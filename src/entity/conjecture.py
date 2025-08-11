@@ -9,6 +9,7 @@ class Conjecture(BaseModel):
     generate_err: str | None
     id: uuid.UUID
     created_at: datetime
+    proof: str | None = None
 
     @field_validator("code")
     @classmethod
@@ -36,6 +37,10 @@ class Conjecture(BaseModel):
     @property
     def sorry_statement(self) -> str:
         return self.statement + "  sorry\n"
+    
+    @property
+    def statement_with_proof(self) -> str:
+        return self.statement + (f"  {self.proof}" if self.proof else "  sorry\n")
 
     @property
     def name(self) -> str:
@@ -63,3 +68,6 @@ class Conjecture(BaseModel):
     def update_code(self, code: str):
         validated_code = self.__class__._validate_code(code)
         self.code = validated_code
+    
+    def update_proof(self, proof: str):
+        self.proof = proof

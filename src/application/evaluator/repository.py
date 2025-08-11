@@ -25,17 +25,32 @@ class ConjectureEvalResultRepository:
         self.file_path = file_path
 
     def save(self, results: list[ConjectureEvalResult]) -> None:
-        """ConjectureEvalResultをjsonl形式で保存する"""
+        """
+        conjecture: Conjecture
+        passed: bool
+        non_trivial_provable: bool
+        non_trivial_neg_provable: bool
+        exact_provable: bool
+        aesop_provable: bool
+        error: LeanProcessorResponse | str | None
+        proofs: List[str] | None | str
+        id: uuid.UUID
+        created_at: datetime
+        context_name: str
+        iter_num: int
+        """
         with open(self.file_path, "a") as f:
             for result in results:
                 f.write(
                     json.dumps(
                         {
                             "id": str(result.conjecture.id),
-                            "already_exists": result.already_exists,
+                            "passed": result.passed,
+                            "non_trivial_provable": result.non_trivial_provable,
+                            "non_trivial_neg_provable": result.non_trivial_neg_provable,
+                            "exact_provable": result.exact_provable,
                             "aesop_provable": result.aesop_provable,
-                            "goal": result.goal,
-                            "proof": result.proof,
+                            "proofs": result.proofs,
                             "error": (
                                 None if result.error is None else (
                                     result.error if isinstance(result.error, str) else result.error.model_dump_json()
@@ -44,6 +59,7 @@ class ConjectureEvalResultRepository:
                             "created_at": result.created_at.isoformat(),
                             "conjecture": result.conjecture.context_and_statement,
                             "context_name": result.context_name,
+                            "iter_num": result.iter_num,
                         }
                     )
                     + "\n"
@@ -52,7 +68,7 @@ class ConjectureEvalResultRepository:
         with NONTIVIAL_CONJECTURE_JSONL_FILE_PATH.open("a") as f:
             for result in results:
                 if (
-                    not result.already_exists
+                    not result.exact_provable
                     and not result.aesop_provable
                     and result.error is None
                 ):

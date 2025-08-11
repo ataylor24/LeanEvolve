@@ -63,8 +63,9 @@ def _feature_key(entry: Dict[str, Any]) -> Tuple[int, ...] | None:
     global _cfg
     assert _cfg is not None, "Archive not initialised"
 
-    features = entry.get("fitness_features", {})
-
+    features = entry.get("map_scores", {})
+    if not features:
+        return tuple([0.0] * 4)
     indices: List[int] = []
     for dim in _cfg.dims:
         val = features.get(dim)
