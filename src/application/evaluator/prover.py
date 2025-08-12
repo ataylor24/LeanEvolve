@@ -2,7 +2,7 @@
 import torch
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from typing import List, Sequence
+from typing import List, Sequence, Dict
 from src.application.generator.generator import Conjecture
 
 class Prover:
@@ -10,10 +10,10 @@ class Prover:
         self,
         model_id: str,
         tensor_parallel_size: int = 2,
-        max_tokens: int = 8192,
+        max_tokens: int = 1024,
         num_return_sequences: int = 32,   # ← pick your default k
         gpu_memory_utilization: float = 0.75,
-        temperature: float = 1.0,
+        temperature: float = 0.7,
         max_num_seqs: int | None = None,  # vLLM in-flight concurrency; None = auto
     ):
         self.tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=True)
@@ -23,7 +23,7 @@ class Prover:
             device="cuda",
             dtype="float16",
             tensor_parallel_size=tensor_parallel_size,
-            max_model_len=max_tokens,
+            max_tokens=max_tokens,
             # NOTE: max_num_seqs controls in-flight concurrency, not "n".
             # If you know your batch size and k, you can set > batch_size*k
             # to avoid throttling; otherwise leave None.
@@ -63,11 +63,11 @@ class Prover:
     @torch.inference_mode()
     def generate_k(
         self,
-        conjectures: Sequence[Conjecture],
+        conjectures: Dict[int, Conjecture],
         k: int | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
-    ) -> List[List[str]]:
+    ) -> Dict[int, List[str]]:
         """
         Returns: proofs_per_conjecture: List[List[str]]
                  proofs_per_conjecture[i] has length k and contains k proof tails for statements[i]
@@ -80,7 +80,7 @@ class Prover:
             max_tokens = self.max_tokens
 
         # Build prompts in one pass
-        prompts = [self._to_chat_string(self._format_prompt(s)) for s in conjectures]
+        prompts = [self._to_chat_string(self._format_prompt(s)) for _, s in conjectures.items()]
 
         # vLLM batched generation
         sampling = SamplingParams(
@@ -91,12 +91,8 @@ class Prover:
         request_outputs = self.llm.generate(prompts, sampling_params=sampling)
 
         # Collect aligned outputs: request_outputs[i].outputs is list length k
-        proofs_per_conjecture: List[List[str]] = []
-        for ro in request_outputs:
-            kth = [o.text.strip() for o in ro.outputs]  # preserve order 0..k-1
-            proofs_per_conjecture.append(kth)
+        proofs_per_conjecture: Dict[int, List[str]] = {}
+        for i, ro in enumerate(request_outputs):
+            kth = [o.text.split("```lean4")[-1].split("```", 1)[0].split(":= by")[-1].strip() for o in ro.outputs]  # preserve order 0..k-1
+            proofs_per_conjecture[i] = kth
         return proofs_per_conjecture
-
-    # Back-compat: single-statement path
-    def prove_theorem(self, statement: str, k: int | None = None) -> List[str]:
-        return self.generate_k([statement], k=k or self.num_return_sequences)[0]

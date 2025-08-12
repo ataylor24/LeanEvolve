@@ -26,13 +26,16 @@ class ConjectureEvalResult(BaseModel):
     """
 
     conjecture: Conjecture
-    passed: bool
+    passed_triviality_checks: bool
     non_trivial_provable: bool
     non_trivial_neg_provable: bool
     exact_provable: bool
     aesop_provable: bool
     error: LeanProcessorResponse | str | None
-    proofs: List[str] | None | str
+    verified_proofs: List[str] | None | str
+    unverified_proofs: List[str] | None | str
+    neg_verified_proofs: List[str] | None | str
+    neg_unverified_proofs: List[str] | None | str
     id: uuid.UUID
     created_at: datetime
     context_name: str
@@ -47,26 +50,32 @@ class ConjectureEvalResult(BaseModel):
     def new(
         cls,
         conjecture: Conjecture,
-        passed: bool,
+        passed_triviality_checks: bool,
         non_trivial_provable: bool,
         non_trivial_neg_provable: bool,
         exact_provable: bool,
         aesop_provable: bool,
         error: LeanProcessorResponse | None,
-        proofs: List[str] | str | None,
+        verified_proofs: List[str] | str | None,
+        unverified_proofs: List[str] | str | None,
+        neg_verified_proofs: List[str] | str | None,
+        neg_unverified_proofs: List[str] | str | None,
         context_name: str,
         iter_num: int,
     ):
         """Create a new instance of ConjectureEvalResult."""
         return cls(
             conjecture=conjecture,
-            passed=passed,
+            passed_triviality_checks=passed_triviality_checks,
             non_trivial_provable=non_trivial_provable,
             non_trivial_neg_provable=non_trivial_neg_provable,
             exact_provable=exact_provable,
             aesop_provable=aesop_provable,
             error=error,
-            proofs=proofs,
+            verified_proofs=verified_proofs,
+            unverified_proofs=unverified_proofs,
+            neg_verified_proofs=neg_verified_proofs,
+            neg_unverified_proofs=neg_unverified_proofs,
             id=uuid.uuid4(),
             created_at=datetime.now(), 
             context_name=context_name,

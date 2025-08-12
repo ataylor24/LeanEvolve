@@ -12,6 +12,7 @@ from src.application.evaluator.KiminaPool import KiminaPool
 from src.application.test import generate_test_statements
 from src.entity.mutation import Mutation   
 from src.application import mutation_utils
+from pathlib import Path
 
 
 class ConjecturerPipeline:
@@ -30,7 +31,10 @@ class ConjecturerPipeline:
         generator = ConjectureGenerator(model_name, api_key)
         evaluator = ConjectureEvaluator(kimina_proc, fitness_prover_model)
         repository = ConjectureRepository()
-        eval_repository = ConjectureEvalResultRepository()
+        if not testing:
+            eval_repository = ConjectureEvalResultRepository()
+        else:
+            eval_repository = ConjectureEvalResultRepository(file_path=Path("test_data/test_eval_results.jsonl"))
         fitness_evaluator = FitnessEvaluator(llm_model_name=fitness_llm_model, llm_api_key=api_key, kimina_proc=kimina_proc)
         
         # Initialise MAP archive with default config; you can tune prune thresholds here
@@ -81,13 +85,14 @@ class ConjecturerPipeline:
 
                 
                 print("Evaluating conjectures...")
-                results = evaluator.evaluate(conjectures, context_id, iter_num)
+                results = evaluator.evaluate(conjectures, context_id, iter_num, testing)
                 print(f"Evaluated {len(results)} conjectures")
-                if not testing:
-                    print("Saving evaluation results...")
-                    eval_repository.save(results)
-                    print(f"Saved {len(results)} evaluation results to repository")
-
+                
+                print("Saving evaluation results...")
+                eval_repository.save(results)
+                print(f"Saved {len(results)} evaluation results to repository")
+                
+               
                 print("Updating context...")
                 conjecture_eval_results.extend(results)
                 context, updated = ContextMaker.make(context, conjecture_eval_results, iter_num)

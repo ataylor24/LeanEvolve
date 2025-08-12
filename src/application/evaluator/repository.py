@@ -33,7 +33,8 @@ class ConjectureEvalResultRepository:
         exact_provable: bool
         aesop_provable: bool
         error: LeanProcessorResponse | str | None
-        proofs: List[str] | None | str
+        verified_proofs: List[str] | None | str
+        unverified_proofs: List[str] | None | str
         id: uuid.UUID
         created_at: datetime
         context_name: str
@@ -45,12 +46,15 @@ class ConjectureEvalResultRepository:
                     json.dumps(
                         {
                             "id": str(result.conjecture.id),
-                            "passed": result.passed,
+                            "passed_triviality_checks": result.passed_triviality_checks,
                             "non_trivial_provable": result.non_trivial_provable,
                             "non_trivial_neg_provable": result.non_trivial_neg_provable,
                             "exact_provable": result.exact_provable,
                             "aesop_provable": result.aesop_provable,
-                            "proofs": result.proofs,
+                            "verified_proofs": result.verified_proofs,
+                            "unverified_proofs": result.unverified_proofs,
+                            "neg_verified_proofs": result.neg_verified_proofs,
+                            "neg_unverified_proofs": result.neg_unverified_proofs,
                             "error": (
                                 None if result.error is None else (
                                     result.error if isinstance(result.error, str) else result.error.model_dump_json()

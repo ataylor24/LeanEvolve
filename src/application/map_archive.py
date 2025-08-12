@@ -74,7 +74,7 @@ def _feature_key(entry: Dict[str, Any]) -> Tuple[int, ...] | None:
             print(
                 f"[map_archive] Warning: missing/invalid feature '{dim}' in entry; skipping…"
             )
-            return None
+            continue
         # clamp NaNs, infinities, etc.
         try:
             score_f = float(val)
@@ -82,12 +82,12 @@ def _feature_key(entry: Dict[str, Any]) -> Tuple[int, ...] | None:
             print(
                 f"[map_archive] Warning: could not convert feature '{dim}' to float; skipping…"
             )
-            return None
+            score_f = 0.0
         if score_f != score_f:  # NaN check
             print(
                 f"[map_archive] Warning: feature '{dim}' is NaN; skipping…"
             )
-            return None
+            score_f = 0.0
         score_f = max(0.0, min(score_f, 100.0))  # clamp to [0,100]
         n_bins = _cfg.bins[dim]
         idx = _clamp(int((score_f / 100.0) * n_bins), 0, n_bins - 1)

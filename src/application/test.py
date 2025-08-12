@@ -20,7 +20,7 @@ def generate_test_statements(
     """
     converter = ConjectureConverter()
     head_maker = ConjectureHeadMaker()
-    path = "/home/ataylor2/mathematical_reasoning/sketch-mutations/LeanConjecturer/data_v3/conjecture.jsonl"
+    path = "/home/ataylor2/mathematical_reasoning/sketch-mutations/LeanConjecturer/test_data/conjectures.jsonl"
     head = head_maker.make(context, conjecture_eval_results)
     test_statements: list[Conjecture] = []
     with open(path, "r") as f:

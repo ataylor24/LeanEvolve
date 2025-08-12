@@ -22,11 +22,12 @@ class ConjectureEvaluator:
 
     def _evaluate_proofs_passk(
         self,
-        conjectures: List[Conjecture],                # theorem headers / full declarations
-        proofs_per_conj: List[List[str]],     # k proof tails per statement[i]
+        conjectures: Dict[int, Conjecture],                # theorem headers / full declarations
+        proofs_per_conj: Dict[int, List[str]],     # k proof tails per statement[i]
         *,
         accept_sorry: bool = False,
-    ) -> Tuple[Set[int], Set[int], Dict[int, List[str]]]:
+        testing: bool = False,
+    ) -> Tuple[Set[int], Set[int], Dict[int, Dict[str, List[str]]]]:
         """
         Returns:
         verified_idx:     set of i where ANY of the k proofs verified
@@ -35,22 +36,28 @@ class ConjectureEvaluator:
         """
         results_grouped = self.kimina_proc.verify_proofs_passk(conjectures, proofs_per_conj)
 
-        verified_idx: List[int] = []
-        unverified_idx: List[int] = []
-        verified_proofs: Dict[int, List[str]] = {}
+        verified_idx: Set[int] = set()
+        unverified_idx: Set[int] = set()
+        proofs: Dict[int, Dict[str, List[str]]] = {}
 
+        # `results_grouped` and `proofs_per_conj` are aligned by LOCAL indices 0..n-1
         for i, res_list in enumerate(results_grouped):
+            proof_idx = i
             any_ok = False
-            verified_proofs[i] = []
-            for j, r in enumerate(res_list):
+            proofs[proof_idx] = {}
+            proofs[proof_idx]["verified"] = []
+            proofs[proof_idx]["unverified"] = []
+            for r, proof in zip(res_list, proofs_per_conj[proof_idx]):
                 if self._is_verified(r, accept_sorry=accept_sorry):
-                    verified_idx.append(i)
-                    verified_proofs[i].append(r)
+                    verified_idx.add(proof_idx)
+                    proofs[proof_idx]["verified"].append(proof)
                     any_ok = True
-                    break
+                else:
+                    proofs[proof_idx]["unverified"].append(proof)
             if not any_ok:
-                unverified_idx.append(i)
-        return verified_idx, unverified_idx, verified_proofs
+                unverified_idx.add(proof_idx)
+                
+        return verified_idx, unverified_idx, proofs
 
     def _is_verified(self, entry: dict, *, accept_sorry: bool = False) -> bool:
 
@@ -75,7 +82,8 @@ class ConjectureEvaluator:
     
     def _inverse_provability(
         self,
-        conjectures: List[Conjecture],
+        conjectures: Dict[int, Conjecture],
+        testing: bool = False,
     ) -> Tuple[Set[str], Set[str]]:
         """
         True  ↦  the *negation* (after push_neg) is provable
@@ -84,23 +92,24 @@ class ConjectureEvaluator:
         # 1) batch-rewrite all negations
         negated_forms = self.kimina_proc.batch_push_neg(conjectures)
                     
-        negated_conjectures = [self.converter.convert(conjecture.context, neg_form)[0] for conjecture, neg_form in zip(conjectures, negated_forms)]
+        negated_conjectures = {idx: self.converter.convert(conjectures[idx].context, neg_form)[0] for idx, neg_form in zip(conjectures.keys(), negated_forms)}
 
         # 2) k-proof attempt on the negations
         neg_proofs_k = self.prover.generate_k(negated_conjectures)  # defaults to self.prover.num_return_sequences
 
         # 3) evaluate pass@k
-        neg_verified_idx, neg_unverified_idx, neg_verified_proofs = self._evaluate_proofs_passk(
-            negated_conjectures, neg_proofs_k, accept_sorry=False
+        neg_verified_idx, neg_unverified_idx, neg_proofs = self._evaluate_proofs_passk(
+            negated_conjectures, neg_proofs_k, accept_sorry=False, testing=testing
         )
         
-        return neg_verified_idx, neg_unverified_idx, neg_verified_proofs
+        return neg_verified_idx, neg_unverified_idx, neg_proofs
     
     def evaluate(
         self,
         conjectures: list[Conjecture],
         context_name: str,
         iter_num: int,
+        testing: bool = False,
     ) -> list[ConjectureEvalResult]:
 
         # -------------------- Stage 1: compilation only --------------------
@@ -120,13 +129,16 @@ class ConjectureEvaluator:
         results = [
             ConjectureEvalResult.new(
                 conjecture=cj,
-                passed=False,
+                passed_triviality_checks=False,
                 non_trivial_provable=False,
                 non_trivial_neg_provable=False,
                 exact_provable=False,
                 aesop_provable=False,
                 error="compile_failed" if i not in stage1_pass else None,
-                proofs=None,
+                verified_proofs=None,
+                unverified_proofs=None,
+                neg_verified_proofs=None,
+                neg_unverified_proofs=None,
                 context_name=context_name,
                 iter_num=iter_num,
             )
@@ -143,17 +155,20 @@ class ConjectureEvaluator:
                     m["severity"] == "info" and m["data"].startswith("Try this:")
                     for m in resp["response"]["messages"]
                 )
-                if found:
+                if found and not testing:
                     conjectures[global_idx].update_proof("exact?")
                     results[global_idx] = ConjectureEvalResult.new(
                         conjecture=conjectures[global_idx],
-                        passed=False,
+                        passed_triviality_checks=False,
                         non_trivial_provable=False,
                         non_trivial_neg_provable=False,
                         exact_provable=True,
                         aesop_provable=False,
                         error=None,
-                        proofs="exact?",
+                        verified_proofs="exact?",
+                        unverified_proofs=None,
+                        neg_verified_proofs=None,
+                        neg_unverified_proofs=None,
                         context_name=context_name,
                         iter_num=iter_num,
                     )
@@ -174,17 +189,20 @@ class ConjectureEvaluator:
                     and "sorry" not in m["data"]
                     for m in resp["response"]["messages"]
                 )
-                if proved:
+                if proved and not testing:
                     conjectures[global_idx].update_proof("aesop?")
                     results[global_idx] = ConjectureEvalResult.new(
                         conjecture=conjectures[global_idx],
-                        passed=False,
+                        passed_triviality_checks=False,
                         non_trivial_provable=False,
                         non_trivial_neg_provable=False,
                         exact_provable=False,
                         aesop_provable=True,
                         error=None,
-                        proofs="aesop?",
+                        verified_proofs="aesop?",
+                        unverified_proofs=None,
+                        neg_verified_proofs=None,
+                        neg_unverified_proofs=None,
                         context_name=context_name,
                         iter_num=iter_num,
                         )
@@ -193,23 +211,36 @@ class ConjectureEvaluator:
         
         # -------------------- Stage 4: prove results ------------------------------
         if stage3_pass:
-            conjectures_to_prove = [conjectures[i] for i in stage3_pass]
-            forward_proofs_k = self.prover.generate_k(conjectures_to_prove)  # List[List[str]]
-            verified_idx, unverified_idx, verified_proofs = self._evaluate_proofs_passk(
-                conjectures_to_prove, forward_proofs_k, accept_sorry=False
+            # Build a LOCAL index map 0..n-1 -> global idx in `stage3_pass`
+            conjectures_to_prove = {local_i: conjectures[global_i] for local_i, global_i in enumerate(stage3_pass)}
+            forward_proofs_k = self.prover.generate_k(conjectures_to_prove)  # Dict[int, List[str]] keyed by local indices
+            verified_idx, unverified_idx, proofs = self._evaluate_proofs_passk(
+                conjectures_to_prove, forward_proofs_k, accept_sorry=False, testing=testing
             )
-            for local_idx, proofs in zip(verified_idx, verified_proofs):
-                global_idx = stage3_pass[local_idx]
-                conjectures[global_idx].update_proof(proofs[0])
+            print(f"PROVED {len(verified_idx)} / {len(stage3_pass)} CONJECTURES")
+            global_indices = []
+            for conj_idx in proofs.keys():
+                global_idx = stage3_pass[conj_idx]  # conj_idx is local
+                global_indices.append(global_idx)
+                if proofs[conj_idx]["verified"]:
+                    shortest_proof = min(proofs[conj_idx]["verified"], key=len)
+                    conjectures[global_idx].update_proof(shortest_proof)
+                else:
+                    conjectures[global_idx].update_proof("sorry")
+                
+                provable = len(proofs[conj_idx]["verified"]) > 0
                 results[global_idx] = ConjectureEvalResult.new(
                     conjecture=conjectures[global_idx],
-                    passed=True,
-                    non_trivial_provable=True,
+                    passed_triviality_checks=True,
+                    non_trivial_provable=provable,
                     non_trivial_neg_provable=False,
                     exact_provable=False,
                     aesop_provable=False,
                     error=None,
-                    proofs=proofs,
+                    verified_proofs=proofs[conj_idx]["verified"],
+                    unverified_proofs=proofs[conj_idx]["unverified"],
+                    neg_verified_proofs=None,
+                    neg_unverified_proofs=None,
                     context_name=context_name,
                     iter_num=iter_num,
                 )
@@ -217,41 +248,40 @@ class ConjectureEvaluator:
             # ---------------- 2) inverse provability (negations) ------------------------
           
             if unverified_idx:
-                unverified_list = [conjectures_to_prove[i] for i in sorted(unverified_idx)]
-                neg_verified_idx, neg_unverified_idx, neg_verified_proofs = self._inverse_provability(unverified_list)
-            
-                for local_idx, proofs in zip(neg_verified_idx, neg_verified_proofs):
-                    global_idx = stage3_pass[unverified_idx[local_idx]]
-                    conjectures[global_idx].update_proof(proofs[0])
-                    results[global_idx] = ConjectureEvalResult.new(
-                        conjecture=conjectures[global_idx],
-                        passed=True,
-                        non_trivial_provable=False,
-                        non_trivial_neg_provable=True,
-                        exact_provable=False,
-                        aesop_provable=False,
-                        error=None,
-                        proofs=proofs,
-                        context_name=context_name,
-                        iter_num=iter_num,
-                    )
+                # Reindex the unverified subset to contiguous local indices 0..m-1
+                sorted_unverified = sorted(list(unverified_idx))
+                reindexed_unverified = {local_i: conjectures_to_prove[orig_i] for local_i, orig_i in enumerate(sorted_unverified)}
+                reindexed_to_orig = {local_i: orig_i for local_i, orig_i in enumerate(sorted_unverified)}
 
-                for local_idx in neg_unverified_idx:
-                    global_idx = stage3_pass[unverified_idx[local_idx]]
-                    conjectures[global_idx].update_proof("sorry")
+                _, _, neg_proofs = self._inverse_provability(reindexed_unverified, testing=testing)
+                
+                for conj_idx in neg_proofs.keys():
+                    orig_local_idx = reindexed_to_orig[conj_idx]
+                    global_idx = stage3_pass[orig_local_idx]
+                    global_indices.append(global_idx)
+                    if neg_proofs[conj_idx]["verified"]:
+                        shortest_proof = min(neg_proofs[conj_idx]["verified"], key=len)
+                        conjectures[global_idx].update_proof(shortest_proof)
+                    else:
+                        conjectures[global_idx].update_proof("sorry")
+                        
+                    neg_provable = len(neg_proofs[conj_idx]["verified"]) > 0
                     results[global_idx] = ConjectureEvalResult.new(
                         conjecture=conjectures[global_idx],
-                        passed=True,
+                        passed_triviality_checks=True,
                         non_trivial_provable=False,
-                        non_trivial_neg_provable=False,
+                        non_trivial_neg_provable=neg_provable,
                         exact_provable=False,
                         aesop_provable=False,
                         error=None,
-                        proofs=[],
+                        verified_proofs=proofs[orig_local_idx]["verified"],
+                        unverified_proofs=proofs[orig_local_idx]["unverified"],
+                        neg_verified_proofs=neg_proofs[conj_idx]["verified"],
+                        neg_unverified_proofs=neg_proofs[conj_idx]["unverified"],
                         context_name=context_name,
                         iter_num=iter_num,
                     )
-                    
+                
         return results
 
     @staticmethod

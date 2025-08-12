@@ -71,4 +71,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    if args.testing:
+        args.target = "test_target_files.txt"
     main(args.conjecturer_model_name, args.api_key, Path(args.target), args.max_iter, args.testing, args.fitness_prover_model, args.fitness_llm_model)

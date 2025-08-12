@@ -131,9 +131,9 @@ class KiminaPool:
             return "example", None
         return None, None
     
-    def batch_push_neg(self, conjectures: List[Conjecture]) -> List[str]:
+    def batch_push_neg(self, conjectures: Dict[int, Conjecture]) -> List[str]:
         items = []
-        for idx, conj in enumerate(conjectures):
+        for idx, conj in conjectures.items():
             # 1) Put ALL imports at the very top
             ctx_imports, ctx_rest = self._split_imports_and_rest(conj.context)
             top_imports = self._dedup_imports(
@@ -207,8 +207,8 @@ class KiminaPool:
 
     def verify_proofs_passk(
         self,
-        conjectures: List[Conjecture],
-        proofs_per_conj: List[List[str]],
+        conjectures: Dict[int, Conjecture],
+        proofs_per_conj: Dict[int, List[str]],
     ) -> List[List[Dict]]:
         """
         For each statement[i] and each proof tail proofs_per_conj[i][j], we build:
@@ -222,11 +222,14 @@ class KiminaPool:
         assert len(conjectures) == len(proofs_per_conj), \
             "conjectures and proofs_per_conj must be the same length"
 
-        # Flat list of Snippets with composite IDs "i:j"
+        # Flat list of Snippets with composite IDs "i:j" where
+        # i is the LOCAL index 0..n-1 (in the order used to build prompts)
         items: List[Snippet] = []
-        for i, (conj, proofs) in enumerate(zip(conjectures, proofs_per_conj)):
-            s = conj.code.rstrip()
-            for j, prf in enumerate(proofs):
+        n = len(proofs_per_conj)
+        assert n == len(conjectures), "conjectures and proofs_per_conj must be same length"
+        for i in range(n):
+            s = conjectures[i].code.rstrip()
+            for j, prf in enumerate(proofs_per_conj[i]):
                 tail = prf.strip()
                 code = f"{s}\n{tail}\n"   # keep a newline at end
                 items.append(Snippet(id=f"{i}:{j}", code=code))
